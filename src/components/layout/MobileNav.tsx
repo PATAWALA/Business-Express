@@ -35,7 +35,7 @@ export function MobileNav({ open, onClose, links }: Props) {
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2">
                 <Image
-                  src="/logo.png"
+                  src="/logo.jpeg"
                   alt="Business Express"
                   width={36}
                   height={36}
