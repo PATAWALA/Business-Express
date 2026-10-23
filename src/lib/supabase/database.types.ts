@@ -127,16 +127,40 @@ export type Database = {
           id: number
           exchange_rate_aed_to_fcfa: number
           updated_at: string | null
+          company_name: string | null
+          company_email: string | null
+          company_phone: string | null
+          company_whatsapp: string | null
+          company_address_dubai: string | null
+          company_address_bukavu: string | null
+          notifications_enabled: boolean | null
+          auto_tasks_enabled: boolean | null
         }
         Insert: {
           id?: number
           exchange_rate_aed_to_fcfa?: number
           updated_at?: string | null
+          company_name?: string | null
+          company_email?: string | null
+          company_phone?: string | null
+          company_whatsapp?: string | null
+          company_address_dubai?: string | null
+          company_address_bukavu?: string | null
+          notifications_enabled?: boolean | null
+          auto_tasks_enabled?: boolean | null
         }
         Update: {
           id?: number
           exchange_rate_aed_to_fcfa?: number
           updated_at?: string | null
+          company_name?: string | null
+          company_email?: string | null
+          company_phone?: string | null
+          company_whatsapp?: string | null
+          company_address_dubai?: string | null
+          company_address_bukavu?: string | null
+          notifications_enabled?: boolean | null
+          auto_tasks_enabled?: boolean | null
         }
         Relationships: []
       }
