@@ -76,3 +76,16 @@
 .animate-float { animation: float 6s ease-in-out infinite; }
 .animate-pulse-ring { animation: pulse-ring 2.5s infinite; }
 .animate-marquee { animation: marquee 30s linear infinite; }
+
+@keyframes slide-in-from-bottom {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-in.slide-in-from-bottom {
+  animation: slide-in-from-bottom 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}

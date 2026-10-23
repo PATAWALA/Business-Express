@@ -1,15 +1,13 @@
 // src/app/(admin)/layout.tsx
 "use client";
 
-import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { AdminSidebar } from "@/components/admin/navigation/AdminSidebar";
 import { AdminHeader } from "@/components/admin/layout/AdminHeader";
 import { MobileTabBar } from "@/components/admin/navigation/MobileTabBar";
 import { cn } from "@/lib/utils";
-import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 
 export default function AdminLayout({
   children,
@@ -23,7 +21,6 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
 
-  // Auth guard côté client + récupération email
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
@@ -36,7 +33,6 @@ export default function AdminLayout({
     });
   }, [router]);
 
-  // Fermer la sidebar mobile à chaque changement de page
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
@@ -61,7 +57,6 @@ export default function AdminLayout({
       <div
         className={cn(
           "flex flex-col min-h-screen transition-all duration-300",
-          "lg:ml-64",
           collapsed ? "lg:ml-20" : "lg:ml-64"
         )}
       >
@@ -75,7 +70,7 @@ export default function AdminLayout({
         </main>
       </div>
 
-      <MobileTabBar />
+      <MobileTabBar userEmail={userEmail} />
     </div>
   );
 }
