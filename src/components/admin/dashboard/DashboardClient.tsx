@@ -25,12 +25,19 @@ import { RecentOrders } from "./RecentOrders";
 
 type OrderWithClient = Order & { clients: Client | null };
 
+interface ProjectMinimal {
+  id: string;
+  status: "new" | "contacted" | "quoted" | "converted" | "archived";
+  created_at: string | null;
+}
+
 interface Props {
   orders: OrderWithClient[];
   tasks: Task[];
+  projects: ProjectMinimal[];
 }
 
-export function DashboardClient({ orders, tasks }: Props) {
+export function DashboardClient({ orders, tasks, projects }: Props) {
   const router = useRouter();
 
   const stats = useMemo(() => {
@@ -45,7 +52,6 @@ export function DashboardClient({ orders, tasks }: Props) {
     const marginRate =
       totalRevenue > 0 ? ((totalMargin / totalRevenue) * 100).toFixed(1) : "0";
 
-    // Sparklines sur 6 mois
     const revenueSparkline: number[] = [];
     const marginSparkline: number[] = [];
     for (let i = 5; i >= 0; i--) {
@@ -88,12 +94,12 @@ export function DashboardClient({ orders, tasks }: Props) {
 
   const pendingTasksCount = tasks.filter((t) => !t.completed).length;
 
-  // Nouveaux projets reçus dans les dernières 24h
-  const newProjectsCount = orders.filter((o) => {
-    if (!o.created_at) return false;
+  // ✅ Compte les projets "new" récents (24h), pas les commandes
+  const newProjectsCount = projects.filter((p) => {
+    if (!p.created_at) return false;
     return (
-      o.source === "public" &&
-      Date.now() - new Date(o.created_at).getTime() < 24 * 3600000
+      p.status === "new" &&
+      Date.now() - new Date(p.created_at).getTime() < 24 * 3600000
     );
   }).length;
 
@@ -136,7 +142,7 @@ export function DashboardClient({ orders, tasks }: Props) {
       </div>
 
       {/* ============================================================ */}
-      {/* ALERTE : Nouveaux projets                                    */}
+      {/* ALERTE : Nouveaux projets (conditionnel)                     */}
       {/* ============================================================ */}
       {newProjectsCount > 0 && (
         <Link
@@ -161,7 +167,7 @@ export function DashboardClient({ orders, tasks }: Props) {
       )}
 
       {/* ============================================================ */}
-      {/* ENCART AIDE (PageHelp réutilisable)                          */}
+      {/* ENCART AIDE                                                  */}
       {/* ============================================================ */}
       <PageHelp
         title="💡 Comment utiliser votre dashboard"

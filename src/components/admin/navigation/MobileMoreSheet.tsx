@@ -2,9 +2,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   X,
   CheckSquare,
@@ -30,13 +29,11 @@ export function MobileMoreSheet({ open, onClose, onOpenProfile }: Props) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Fermer au changement de page
   useEffect(() => {
     if (open) onClose();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  // Bloquer le scroll quand ouvert
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -66,12 +63,10 @@ export function MobileMoreSheet({ open, onClose, onOpenProfile }: Props) {
         className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl animate-in slide-in-from-bottom duration-300"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-2">
           <div className="h-1.5 w-12 rounded-full bg-slate-300" />
         </div>
 
-        {/* Header */}
         <div className="flex items-center justify-between px-5 pb-3">
           <h2 className="text-base font-bold text-slate-900">Plus d'options</h2>
           <button
@@ -83,7 +78,6 @@ export function MobileMoreSheet({ open, onClose, onOpenProfile }: Props) {
           </button>
         </div>
 
-        {/* Items secondaires */}
         <div className="px-3 pb-3">
           {secondaryItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
@@ -116,10 +110,8 @@ export function MobileMoreSheet({ open, onClose, onOpenProfile }: Props) {
           })}
         </div>
 
-        {/* Séparateur */}
         <div className="h-px bg-slate-200 mx-5" />
 
-        {/* Compte */}
         <div className="px-3 py-3">
           <button
             onClick={() => {
@@ -148,7 +140,6 @@ export function MobileMoreSheet({ open, onClose, onOpenProfile }: Props) {
           </button>
         </div>
 
-        {/* Safe area iOS */}
         <div className="h-4" />
       </div>
     </div>

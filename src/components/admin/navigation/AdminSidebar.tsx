@@ -10,6 +10,7 @@ import {
   Wallet,
   CheckSquare,
   Settings,
+  Inbox,
   X,
   ChevronLeft,
 } from "lucide-react";
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/admin", label: "Vue d'ensemble", icon: LayoutDashboard },
+  { href: "/admin/projets", label: "Demandes projet", icon: Inbox }, // ← NOUVEAU
   { href: "/admin/commandes", label: "Commandes", icon: ShoppingBag },
   { href: "/admin/clients", label: "Clients", icon: Users },
   { href: "/admin/finances", label: "Finances", icon: Wallet },
@@ -41,9 +43,7 @@ export function AdminSidebar({
 }: Props) {
   const pathname = usePathname();
 
-  const initials = userEmail
-    ? userEmail.substring(0, 2).toUpperCase()
-    : "BE";
+  const initials = userEmail ? userEmail.substring(0, 2).toUpperCase() : "BE";
 
   return (
     <>
@@ -57,7 +57,6 @@ export function AdminSidebar({
       <aside
         className={cn(
           "fixed top-0 left-0 h-screen flex flex-col transition-all duration-300 z-50",
-          // Fond blanc pur + bordure droite
           "bg-white border-r border-slate-200",
           "lg:translate-x-0",
           collapsed ? "lg:w-20" : "lg:w-64",
@@ -65,7 +64,6 @@ export function AdminSidebar({
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        {/* Logo header */}
         <div
           className={cn(
             "flex items-center h-16 border-b border-slate-100",
@@ -107,7 +105,6 @@ export function AdminSidebar({
           )}
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {!collapsed && (
             <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-3 py-2">
@@ -132,14 +129,15 @@ export function AdminSidebar({
                     : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                 )}
               >
-                {/* Indicateur actif à gauche */}
                 {isActive && (
                   <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-blue-600" />
                 )}
                 <item.icon
                   className={cn(
                     "h-5 w-5 shrink-0 transition-colors",
-                    isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
+                    isActive
+                      ? "text-blue-600"
+                      : "text-slate-400 group-hover:text-slate-600"
                   )}
                 />
                 {!collapsed && <span>{item.label}</span>}
@@ -148,7 +146,6 @@ export function AdminSidebar({
           })}
         </nav>
 
-        {/* Footer - Profil */}
         <div className="border-t border-slate-100 p-3">
           {!collapsed ? (
             <div className="flex items-center gap-2.5 px-2 py-1.5">
@@ -175,7 +172,7 @@ export function AdminSidebar({
           {collapsed && (
             <button
               onClick={onToggleCollapse}
-              className="w-full flex items-center justify-center h-8 mt-2 rounded-lg hover:bg-slate-100 text-slate-400 mt-3"
+              className="w-full flex items-center justify-center h-8 mt-3 rounded-lg hover:bg-slate-100 text-slate-400"
               aria-label="Étendre"
             >
               <ChevronLeft className="h-4 w-4 rotate-180" />
