@@ -2,7 +2,8 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, PanelLeft } from "lucide-react";
+import Image from "next/image";
+import { PanelLeft } from "lucide-react";
 import { UserMenu } from "@/components/admin/profile/UserMenu";
 import { ProfileModal } from "@/components/admin/profile/ProfileModal";
 
@@ -22,20 +23,21 @@ export function AdminHeader({
   return (
     <>
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
-        <div className="flex items-center gap-2">
-          {/* Bouton burger mobile */}
-          <button
-            onClick={onOpenMobileSidebar}
-            className="lg:hidden flex h-10 w-10 items-center justify-center rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
-            aria-label="Ouvrir le menu"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
+        <div className="flex items-center gap-3">
+          {/* Logo visible sur mobile et desktop */}
+          <Image
+            src="/logo.jpeg"
+            alt="Business Express"
+            width={40}
+            height={40}
+            className="h-9 w-auto object-contain"
+            priority
+          />
 
-          {/* Bouton collapse desktop */}
+          {/* Bouton collapse desktop uniquement (pas de burger mobile) */}
           <button
             onClick={onToggleSidebarCollapse}
-            className="hidden lg:flex h-10 w-10 items-center justify-center rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
+            className="hidden lg:flex h-10 w-10 items-center justify-center rounded-lg hover:bg-slate-100 text-slate-600 transition-colors ml-1"
             aria-label="Réduire/Étendre la sidebar"
             title="Réduire/Étendre la sidebar"
           >

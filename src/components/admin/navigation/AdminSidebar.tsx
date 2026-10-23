@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -18,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/admin", label: "Vue d'ensemble", icon: LayoutDashboard },
-  { href: "/admin/projets", label: "Demandes projet", icon: Inbox }, // ← NOUVEAU
+  { href: "/admin/projets", label: "Demandes projet", icon: Inbox },
   { href: "/admin/commandes", label: "Commandes", icon: ShoppingBag },
   { href: "/admin/clients", label: "Clients", icon: Users },
   { href: "/admin/finances", label: "Finances", icon: Wallet },
@@ -64,6 +65,7 @@ export function AdminSidebar({
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
+        {/* Logo header */}
         <div
           className={cn(
             "flex items-center h-16 border-b border-slate-100",
@@ -71,9 +73,15 @@ export function AdminSidebar({
           )}
         >
           <Link href="/admin" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 font-bold text-sm text-white shrink-0 shadow-lg shadow-blue-500/30">
-              BE
-            </div>
+            {/* Logo réel */}
+            <Image
+              src="/logo.jpeg"
+              alt="Business Express"
+              width={36}
+              height={36}
+              className="h-9 w-auto object-contain shrink-0"
+              priority
+            />
             {!collapsed && (
               <div className="flex flex-col leading-none">
                 <div className="text-xs font-bold text-slate-900 tracking-wide">
@@ -86,6 +94,7 @@ export function AdminSidebar({
             )}
           </Link>
 
+          {/* Fermeture mobile */}
           <button
             onClick={onCloseMobile}
             className="lg:hidden flex h-8 w-8 items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500"
@@ -94,6 +103,7 @@ export function AdminSidebar({
             <X className="h-4 w-4" />
           </button>
 
+          {/* Collapse desktop */}
           {!collapsed && (
             <button
               onClick={onToggleCollapse}
@@ -105,6 +115,7 @@ export function AdminSidebar({
           )}
         </div>
 
+        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {!collapsed && (
             <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-3 py-2">
@@ -146,6 +157,7 @@ export function AdminSidebar({
           })}
         </nav>
 
+        {/* Profil footer */}
         <div className="border-t border-slate-100 p-3">
           {!collapsed ? (
             <div className="flex items-center gap-2.5 px-2 py-1.5">
