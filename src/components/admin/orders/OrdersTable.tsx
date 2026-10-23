@@ -1,150 +1,265 @@
 // src/components/admin/orders/OrdersTable.tsx
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, Plus } from "lucide-react";
-import { StatusBadge } from "@/components/admin/ui/StatusBadge";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Plus,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+  Package,
+  RefreshCw,
+} from "lucide-react";
+import type { Order, Client } from "@/lib/order-client";
+import { formatFCFA, formatDate } from "@/lib/admin-utils";
+import { PageHeader } from "@/components/admin/ui/PageHeader";
+import { Button } from "@/components/admin/ui/Button";
+import { Avatar } from "@/components/admin/ui/Avatar";
+import { EmptyState } from "@/components/admin/ui/EmptyState";
+import { OrdersFilters } from "./OrdersFilters";
+import { StatusDropdown } from "./StatusDropdown";
 import { NewOrderModal } from "./NewOrderModal";
 import { OrderDetailModal } from "./OrderDetailModal";
-import {
-  type Order,
-  type Client,
-  updateOrderStatus,
-} from "@/lib/order-client";
-import { formatAED, formatFCFA, formatDate } from "@/lib/admin-utils";
 
 type OrderWithClient = Order & { clients: Client | null };
-
-const statusFlow: Order["status"][] = [
-  "sourcing",
-  "purchased",
-  "freight",
-  "delivered",
-];
+type SortKey = "created_at" | "margin_fcfa" | "order_ref";
+type SortDir = "asc" | "desc";
+type FilterKey = "all" | Order["status"];
 
 interface Props {
   initialOrders: OrderWithClient[];
 }
 
+const PAGE_SIZE = 20;
+
 export function OrdersTable({ initialOrders }: Props) {
+  const router = useRouter();
   const [orders, setOrders] = useState(initialOrders);
-  const [openStatusFor, setOpenStatusFor] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [detailOrder, setDetailOrder] = useState<OrderWithClient | null>(null);
 
-  function refresh() {
-    // Recharge la page pour avoir les données fraîches
-    window.location.reload();
+  // Filtres & tri
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<FilterKey>("all");
+  const [sortKey, setSortKey] = useState<SortKey>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [page, setPage] = useState(1);
+
+  // Compteurs par statut
+  const counts = useMemo(() => {
+    return {
+      all: orders.length,
+      sourcing: orders.filter((o) => o.status === "sourcing").length,
+      purchased: orders.filter((o) => o.status === "purchased").length,
+      freight: orders.filter((o) => o.status === "freight").length,
+      delivered: orders.filter((o) => o.status === "delivered").length,
+    };
+  }, [orders]);
+
+  // Filtrage + tri
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    let list = orders;
+
+    if (filter !== "all") {
+      list = list.filter((o) => o.status === filter);
+    }
+
+    if (q) {
+      list = list.filter(
+        (o) =>
+          o.order_ref.toLowerCase().includes(q) ||
+          o.items_description.toLowerCase().includes(q) ||
+          (o.clients?.name ?? "").toLowerCase().includes(q) ||
+          (o.supplier_name ?? "").toLowerCase().includes(q)
+      );
+    }
+
+    return [...list].sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "created_at") {
+        cmp = (a.created_at ?? "").localeCompare(b.created_at ?? "");
+      } else if (sortKey === "margin_fcfa") {
+        cmp = (a.margin_fcfa ?? 0) - (b.margin_fcfa ?? 0);
+      } else if (sortKey === "order_ref") {
+        cmp = a.order_ref.localeCompare(b.order_ref);
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [orders, filter, search, sortKey, sortDir]);
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageStart = (safePage - 1) * PAGE_SIZE;
+  const paginated = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+    setPage(1);
   }
 
-  async function handleStatusChange(orderId: string, newStatus: Order["status"]) {
-    try {
-      await updateOrderStatus(orderId, newStatus);
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
-      );
-    } catch (e) {
-      console.error(e);
-      alert("Erreur mise à jour statut");
-    }
-    setOpenStatusFor(null);
+  function SortIcon({ col }: { col: SortKey }) {
+    if (sortKey !== col)
+      return <ArrowUpDown className="h-3 w-3 text-slate-400" />;
+    return sortDir === "asc" ? (
+      <ArrowUp className="h-3 w-3 text-blue-600" />
+    ) : (
+      <ArrowDown className="h-3 w-3 text-blue-600" />
+    );
+  }
+
+  function refresh() {
+    router.refresh();
   }
 
   return (
-    <>
-      <div className="mb-4 flex justify-end">
-        <button
-          onClick={() => setNewOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm"
-        >
-          <Plus className="h-4 w-4" />
-          Nouvelle commande
-        </button>
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        {orders.length === 0 ? (
-          <div className="p-10 text-center text-slate-500 text-sm">
-            Aucune commande. Cliquez sur "Nouvelle commande" pour commencer.
+    <div>
+      {/* Header */}
+      <PageHeader
+        title="Commandes"
+        subtitle={`${orders.length} commande${orders.length > 1 ? "s" : ""} au total`}
+        action={
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="md"
+              onClick={refresh}
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span className="hidden sm:inline">Actualiser</span>
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setNewOpen(true)}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Nouvelle commande
+            </Button>
           </div>
+        }
+      />
+
+      {/* Filtres */}
+      <OrdersFilters
+        search={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
+        filter={filter}
+        onFilterChange={(v) => {
+          setFilter(v);
+          setPage(1);
+        }}
+        counts={counts}
+      />
+
+      {/* Table / Cards */}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={Package}
+            title={search || filter !== "all" ? "Aucun résultat" : "Aucune commande"}
+            description={
+              search || filter !== "all"
+                ? "Essayez d'ajuster votre recherche ou vos filtres."
+                : "Créez votre première commande pour commencer."
+            }
+            action={
+              !search && filter === "all" ? (
+                <Button onClick={() => setNewOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                  Nouvelle commande
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <>
-            {/* Desktop */}
+            {/* Desktop table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr className="text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                    <th className="px-4 py-3">Réf.</th>
+                    <th className="px-4 py-3">
+                      <button
+                        onClick={() => toggleSort("order_ref")}
+                        className="flex items-center gap-1 hover:text-slate-900"
+                      >
+                        Réf.
+                        <SortIcon col="order_ref" />
+                      </button>
+                    </th>
                     <th className="px-4 py-3">Client</th>
                     <th className="px-4 py-3">Article</th>
                     <th className="px-4 py-3 text-right">Vente</th>
-                    <th className="px-4 py-3 text-right">Marge</th>
+                    <th className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => toggleSort("margin_fcfa")}
+                        className="flex items-center gap-1 hover:text-slate-900 ml-auto"
+                      >
+                        Marge
+                        <SortIcon col="margin_fcfa" />
+                      </button>
+                    </th>
                     <th className="px-4 py-3">Livraison</th>
                     <th className="px-4 py-3">Statut</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {orders.map((order) => (
+                  {paginated.map((order) => (
                     <tr
                       key={order.id}
                       onClick={() => setDetailOrder(order)}
-                      className="hover:bg-slate-50 cursor-pointer"
+                      className="hover:bg-slate-50 cursor-pointer transition-colors"
                     >
                       <td className="px-4 py-3 font-mono text-xs font-bold text-slate-900">
                         {order.order_ref}
                       </td>
-                      <td className="px-4 py-3 text-slate-700">
-                        {order.clients?.name ?? "—"}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Avatar
+                            name={order.clients?.name ?? "?"}
+                            size="sm"
+                          />
+                          <span className="text-slate-700 text-sm">
+                            {order.clients?.name ?? "—"}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-slate-600 max-w-[200px] truncate">
+                      <td className="px-4 py-3 text-slate-600 max-w-[220px] truncate">
                         {order.items_description}
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-700 font-semibold">
+                      <td className="px-4 py-3 text-right font-semibold text-slate-900">
                         {formatFCFA(order.sale_price_fcfa)}
                       </td>
-                      <td className="px-4 py-3 text-right font-semibold text-green-600">
+                      <td className="px-4 py-3 text-right font-semibold text-emerald-600">
                         {formatFCFA(order.margin_fcfa)}
                       </td>
-                      <td className="px-4 py-3 text-slate-500 text-xs">
+                      <td className="px-4 py-3 text-xs text-slate-500">
                         {formatDate(order.expected_delivery)}
                       </td>
                       <td
                         className="px-4 py-3"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="relative">
-                          <button
-                            onClick={() =>
-                              setOpenStatusFor(
-                                openStatusFor === order.id ? null : order.id
-                              )
-                            }
-                            className="flex items-center gap-1"
-                          >
-                            <StatusBadge status={order.status} />
-                            <ChevronDown className="h-3 w-3 text-slate-400" />
-                          </button>
-                          {openStatusFor === order.id && (
-                            <div className="absolute z-10 top-full mt-1 left-0 bg-white rounded-lg shadow-lg border border-slate-200 min-w-[140px]">
-                              {statusFlow.map((s) => (
-                                <button
-                                  key={s}
-                                  onClick={() => handleStatusChange(order.id, s)}
-                                  className={`block w-full text-left px-3 py-2 text-xs hover:bg-slate-50 first:rounded-t-lg last:rounded-b-lg ${
-                                    order.status === s
-                                      ? "font-bold text-blue-600"
-                                      : ""
-                                  }`}
-                                >
-                                  {s === "sourcing" && "🟡 Sourcing"}
-                                  {s === "purchased" && "🔵 Acheté"}
-                                  {s === "freight" && "🟣 En Fret"}
-                                  {s === "delivered" && "🟢 Livré"}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                        <StatusDropdown
+                          orderId={order.id}
+                          currentStatus={order.status}
+                          onChanged={() => router.refresh()}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -152,54 +267,91 @@ export function OrdersTable({ initialOrders }: Props) {
               </table>
             </div>
 
-            {/* Mobile */}
+            {/* Mobile cards */}
             <div className="md:hidden divide-y divide-slate-100">
-              {orders.map((order) => (
+              {paginated.map((order) => (
                 <div
                   key={order.id}
                   onClick={() => setDetailOrder(order)}
-                  className="p-4 space-y-2 cursor-pointer hover:bg-slate-50"
+                  className="p-4 hover:bg-slate-50 cursor-pointer"
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-xs font-mono font-bold text-slate-900">
-                        {order.order_ref}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {order.clients?.name ?? "—"}
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Avatar name={order.clients?.name ?? "?"} size="sm" />
+                      <div>
+                        <div className="text-xs font-mono font-bold text-slate-900">
+                          {order.order_ref}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {order.clients?.name ?? "—"}
+                        </div>
                       </div>
                     </div>
-                    <StatusBadge status={order.status} />
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <StatusDropdown
+                        orderId={order.id}
+                        currentStatus={order.status}
+                        onChanged={() => router.refresh()}
+                      />
+                    </div>
                   </div>
-                  <div className="text-sm text-slate-700">
+                  <div className="text-sm text-slate-700 mb-2">
                     {order.items_description}
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-500">
                       Vente : {formatFCFA(order.sale_price_fcfa)}
                     </span>
-                    <span className="font-semibold text-green-600">
+                    <span className="font-semibold text-emerald-600">
                       Marge : {formatFCFA(order.margin_fcfa)}
                     </span>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50">
+                <div className="text-xs text-slate-500">
+                  {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filtered.length)} sur {filtered.length}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setPage(safePage - 1)}
+                    disabled={safePage === 1}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span className="text-xs font-semibold text-slate-700 px-2">
+                    {safePage} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage(safePage + 1)}
+                    disabled={safePage === totalPages}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
 
+      {/* Modals */}
       <NewOrderModal
         open={newOpen}
         onClose={() => setNewOpen(false)}
         onCreated={refresh}
       />
-
       <OrderDetailModal
         order={detailOrder}
         onClose={() => setDetailOrder(null)}
         onSaved={refresh}
       />
-    </>
+    </div>
   );
 }

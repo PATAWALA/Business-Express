@@ -1,9 +1,11 @@
 // src/app/(admin)/admin/commandes/page.tsx
-import { PageHeader } from "@/components/admin/ui/PageHeader";
 import { OrdersTable } from "@/components/admin/orders/OrdersTable";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Order, Client } from "@/lib/order-client";
 
 export const dynamic = "force-dynamic";
+
+type OrderWithClient = Order & { clients: Client | null };
 
 export default async function CommandesPage() {
   const supabase = createAdminClient();
@@ -12,13 +14,5 @@ export default async function CommandesPage() {
     .select("*, clients(*)")
     .order("created_at", { ascending: false });
 
-  return (
-    <div>
-      <PageHeader
-        title="Commandes"
-        subtitle={`${orders?.length ?? 0} commandes au total`}
-      />
-      <OrdersTable initialOrders={orders ?? []} />
-    </div>
-  );
+  return <OrdersTable initialOrders={(orders as OrderWithClient[] | null) ?? []} />;
 }

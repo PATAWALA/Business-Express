@@ -1,22 +1,30 @@
 // src/components/admin/ui/PageHeader.tsx
-interface PageHeaderProps {
+import { cn } from "@/lib/utils";
+
+interface Props {
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
+  className?: string;
 }
 
-export function PageHeader({ title, subtitle, action }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, action, className }: Props) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+    <div
+      className={cn(
+        "flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6 lg:mb-8",
+        className
+      )}
+    >
+      <div className="min-w-0">
+        <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-slate-900 truncate">
           {title}
         </h1>
         {subtitle && (
-          <p className="text-sm text-slate-600 mt-1">{subtitle}</p>
+          <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
         )}
       </div>
-      {action && <div>{action}</div>}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }

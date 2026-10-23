@@ -2,32 +2,31 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
+import { Button } from "@/components/admin/ui/Button";
 import { NewClientInlineModal } from "@/components/admin/orders/NewClientInlineModal";
+import { useToast } from "@/components/admin/ui/ToastProvider";
 
-interface Props {
-  onCreated: () => void;
-}
-
-export function NewClientButton({ onCreated }: Props) {
+export function NewClientButton() {
+  const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm"
-      >
+      <Button variant="primary" onClick={() => setOpen(true)} className="gap-2">
         <Plus className="h-4 w-4" />
         Nouveau client
-      </button>
+      </Button>
 
       <NewClientInlineModal
         open={open}
         onClose={() => setOpen(false)}
         onCreated={() => {
-          onCreated();
+          toast.success("Client créé avec succès ✅");
           setOpen(false);
+          router.refresh();
         }}
       />
     </>

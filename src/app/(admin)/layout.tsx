@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { AdminSidebar } from "@/components/admin/navigation/AdminSidebar";
 import { AdminHeader } from "@/components/admin/layout/AdminHeader";
 import { MobileTabBar } from "@/components/admin/navigation/MobileTabBar";
+import { ToastProvider } from "@/components/admin/ui/ToastProvider";  // ← AJOUT
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
@@ -46,31 +47,33 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AdminSidebar
-        collapsed={collapsed}
-        mobileOpen={mobileOpen}
-        onToggleCollapse={() => setCollapsed(!collapsed)}
-        onCloseMobile={() => setMobileOpen(false)}
-      />
-
-      <div
-        className={cn(
-          "flex flex-col min-h-screen transition-all duration-300",
-          collapsed ? "lg:ml-20" : "lg:ml-64"
-        )}
-      >
-        <AdminHeader
-          userEmail={userEmail}
-          onToggleSidebarCollapse={() => setCollapsed(!collapsed)}
-          onOpenMobileSidebar={() => setMobileOpen(true)}
+    <ToastProvider>
+      <div className="min-h-screen bg-slate-50">
+        <AdminSidebar
+          collapsed={collapsed}
+          mobileOpen={mobileOpen}
+          onToggleCollapse={() => setCollapsed(!collapsed)}
+          onCloseMobile={() => setMobileOpen(false)}
         />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
-          {children}
-        </main>
-      </div>
 
-      <MobileTabBar userEmail={userEmail} />
-    </div>
+        <div
+          className={cn(
+            "flex flex-col min-h-screen transition-all duration-300",
+            collapsed ? "lg:ml-20" : "lg:ml-64"
+          )}
+        >
+          <AdminHeader
+            userEmail={userEmail}
+            onToggleSidebarCollapse={() => setCollapsed(!collapsed)}
+            onOpenMobileSidebar={() => setMobileOpen(true)}
+          />
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+            {children}
+          </main>
+        </div>
+
+        <MobileTabBar userEmail={userEmail} />
+      </div>
+    </ToastProvider>
   );
 }

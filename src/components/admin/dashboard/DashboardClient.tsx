@@ -1,220 +1,164 @@
 // src/components/admin/dashboard/DashboardClient.tsx
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { PageHeader } from "@/components/admin/ui/PageHeader";
-import { KpiCard } from "@/components/admin/ui/KpiCard";
-import { StatusBadge } from "@/components/admin/ui/StatusBadge";
+import Link from "next/link";
 import {
-  formatFCFA,
-  formatDate,
-  getPriorityLabel,
-  getPriorityColor,
-} from "@/lib/admin-utils";
-import { Wallet, TrendingUp, Package, AlertCircle, CheckCircle2, RefreshCw } from "lucide-react";
-import type { Order, Task } from "@/lib/order-client";
+  Wallet,
+  TrendingUp,
+  Package,
+  AlertCircle,
+  Plus,
+  RefreshCw,
+} from "lucide-react";
+import type { Order, Task, Client } from "@/lib/order-client";
+import { formatFCFA } from "@/lib/admin-utils";
+import { StatCard } from "@/components/admin/ui/StatCard";
+import { Button } from "@/components/admin/ui/Button";
+import { RevenueChart } from "./RevenueChart";
+import { UrgentTasks } from "./UrgentTasks";
+import { RecentOrders } from "./RecentOrders";
+
+type OrderWithClient = Order & { clients: Client | null };
 
 interface Props {
-  orders: Order[];
+  orders: OrderWithClient[];
   tasks: Task[];
 }
 
 export function DashboardClient({ orders, tasks }: Props) {
   const router = useRouter();
-  const [refreshing, setRefreshing] = useState(false);
 
-  // Recalcul KPIs
-  const totalRevenue = useMemo(
-    () => orders.reduce((s, o) => s + (o.sale_price_fcfa ?? 0), 0),
-    [orders]
-  );
-  const totalMargin = useMemo(
-    () => orders.reduce((s, o) => s + (o.margin_fcfa ?? 0), 0),
-    [orders]
-  );
-  const inTransit = orders.filter((o) => o.status === "freight").length;
-  const inSourcing = orders.filter((o) => o.status === "sourcing").length;
+  const stats = useMemo(() => {
+    const totalRevenue = orders.reduce(
+      (s, o) => s + (o.sale_price_fcfa ?? 0),
+      0
+    );
+    const totalMargin = orders.reduce((s, o) => s + (o.margin_fcfa ?? 0), 0);
+    const inTransit = orders.filter((o) => o.status === "freight").length;
+    const inSourcing = orders.filter((o) => o.status === "sourcing").length;
 
-  const urgentTasks = useMemo(
-    () =>
-      tasks
-        .filter((t) => !t.completed)
-        .filter((t) => t.priority === "urgent" || t.priority === "high")
-        .slice(0, 4),
-    [tasks]
-  );
+    const marginRate =
+      totalRevenue > 0 ? ((totalMargin / totalRevenue) * 100).toFixed(1) : "0";
 
-  const recentOrders = useMemo(
-    () =>
-      [...orders]
-        .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
-        .slice(0, 5),
-    [orders]
-  );
-
-  async function handleRefresh() {
-    setRefreshing(true);
-    router.refresh();
-    setTimeout(() => setRefreshing(false), 600);
-  }
-
-  async function toggleTask(taskId: string, completed: boolean) {
-    try {
-      await fetch(`/api/tasks/${taskId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ completed: !completed }),
+    const revenueSparkline: number[] = [];
+    const marginSparkline: number[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const monthOrders = orders.filter((o) => {
+        if (!o.created_at) return false;
+        const od = new Date(o.created_at);
+        return (
+          `${od.getFullYear()}-${String(od.getMonth() + 1).padStart(2, "0")}` ===
+          key
+        );
       });
-      router.refresh();
-    } catch (e) {
-      console.error(e);
+      revenueSparkline.push(
+        monthOrders.reduce((s, o) => s + (o.sale_price_fcfa ?? 0), 0)
+      );
+      marginSparkline.push(
+        monthOrders.reduce((s, o) => s + (o.margin_fcfa ?? 0), 0)
+      );
     }
-  }
+
+    return {
+      totalRevenue,
+      totalMargin,
+      inTransit,
+      inSourcing,
+      marginRate,
+      revenueSparkline,
+      marginSparkline,
+    };
+  }, [orders]);
+
+  const today = new Date().toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const pendingTasksCount = tasks.filter((t) => !t.completed).length;
 
   return (
-    <div>
-      <div className="flex items-start justify-between mb-2">
-        <PageHeader
-          title="Bonjour Prince 👋"
-          subtitle="Voici votre activité du jour"
-        />
-        <button
-          onClick={handleRefresh}
-          className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"
-          disabled={refreshing}
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-          <span className="hidden sm:inline">Actualiser</span>
-        </button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1 capitalize">
+            {today}
+          </div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">
+            Bonjour Prince 👋
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {pendingTasksCount > 0
+              ? `${pendingTasksCount} tâche${pendingTasksCount > 1 ? "s" : ""} en attente aujourd'hui`
+              : "Tout est à jour, bonne journée !"}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="md"
+            onClick={() => router.refresh()}
+            className="gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            <span className="hidden sm:inline">Actualiser</span>
+          </Button>
+          <Link href="/admin/commandes">
+            <Button variant="primary" size="md" className="gap-2">
+              <Plus className="h-4 w-4" />
+              Nouvelle commande
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <KpiCard
-          title="Chiffre d'affaires"
-          value={formatFCFA(totalRevenue)}
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Chiffre d'affaires"
+          value={formatFCFA(stats.totalRevenue)}
           icon={Wallet}
-          color="green"
-        />
-        <KpiCard
-          title="Marge nette"
-          value={formatFCFA(totalMargin)}
-          icon={TrendingUp}
           color="blue"
+          variant="dark"
+          sparklineData={stats.revenueSparkline}
         />
-        <KpiCard
-          title="En transit"
-          value={`${inTransit} colis`}
+        <StatCard
+          label="Marge nette"
+          value={formatFCFA(stats.totalMargin)}
+          icon={TrendingUp}
+          color="green"
+          trend={`${stats.marginRate}% du CA`}
+          sparklineData={stats.marginSparkline}
+        />
+        <StatCard
+          label="En transit"
+          value={`${stats.inTransit} colis`}
           icon={Package}
           color="purple"
         />
-        <KpiCard
-          title="En sourcing"
-          value={`${inSourcing} commandes`}
+        <StatCard
+          label="En sourcing"
+          value={`${stats.inSourcing} commandes`}
           icon={AlertCircle}
-          color="yellow"
+          color="amber"
         />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Tâches urgentes */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-slate-900">
-              ⚠️ Tâches urgentes
-            </h2>
-            <a
-              href="/admin/taches"
-              className="text-xs font-semibold text-blue-600 hover:underline"
-            >
-              Voir tout
-            </a>
-          </div>
-          {urgentTasks.length === 0 ? (
-            <div className="text-sm text-slate-500 text-center py-6">
-              🎉 Aucune tâche urgente !
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {urgentTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="flex items-start gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50"
-                >
-                  <button
-                    onClick={() => toggleTask(task.id, task.completed ?? false)}
-                    className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-slate-300 hover:border-green-500"
-                    aria-label="Marquer comme complétée"
-                  >
-                    <CheckCircle2 className="h-3 w-3 text-transparent hover:text-green-500" />
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <div
-                      className={`text-xs font-semibold px-2 py-0.5 rounded inline-block mb-1 ${getPriorityColor(
-                        task.priority
-                      )}`}
-                    >
-                      {getPriorityLabel(task.priority)}
-                    </div>
-                    <div className="text-sm font-semibold text-slate-900">
-                      {task.title}
-                    </div>
-                    {task.due_date && (
-                      <div className="text-xs text-slate-500 mt-0.5">
-                        Échéance : {formatDate(task.due_date)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+      {/* Graphique */}
+      <RevenueChart orders={orders} />
 
-        {/* Dernières commandes */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-slate-900">
-              📦 Dernières commandes
-            </h2>
-            <a
-              href="/admin/commandes"
-              className="text-xs font-semibold text-blue-600 hover:underline"
-            >
-              Voir tout
-            </a>
-          </div>
-          {recentOrders.length === 0 ? (
-            <div className="text-sm text-slate-500 text-center py-6">
-              Aucune commande pour l'instant.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {recentOrders.map((order) => (
-                <a
-                  key={order.id}
-                  href="/admin/commandes"
-                  className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors"
-                >
-                  <div className="min-w-0">
-                    <div className="text-sm font-bold text-slate-900 font-mono">
-                      {order.order_ref}
-                    </div>
-                    <div className="text-xs text-slate-500 truncate">
-                      {order.items_description}
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0 ml-3">
-                    <StatusBadge status={order.status} />
-                    <div className="text-xs font-semibold text-green-600 mt-1">
-                      {formatFCFA(order.margin_fcfa)}
-                    </div>
-                  </div>
-                </a>
-              ))}
-            </div>
-          )}
-        </div>
+      {/* Tâches + Commandes */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <UrgentTasks tasks={tasks} />
+        <RecentOrders orders={orders} />
       </div>
     </div>
   );

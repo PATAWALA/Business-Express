@@ -1,245 +1,250 @@
 // src/components/admin/dashboard/TasksClient.tsx
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { PageHeader } from "@/components/admin/ui/PageHeader";
-import {
-  formatDate,
-  getPriorityLabel,
-  getPriorityColor,
-} from "@/lib/admin-utils";
-import { Plus, CheckCircle2, Circle, Trash2, Loader2, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Plus, Search, X, ListTodo, CheckCircle2 } from "lucide-react";
 import type { Task } from "@/lib/order-client";
+import { PageHeader } from "@/components/admin/ui/PageHeader";
+import { Button } from "@/components/admin/ui/Button";
+import { EmptyState } from "@/components/admin/ui/EmptyState";
+import { TaskCard } from "./TaskCard";
+import { NewTaskModal } from "./NewTaskModal";
 
 interface Props {
   tasks: Task[];
 }
 
+type StatusFilter = "all" | "pending" | "done";
+type PriorityFilter = "all" | "urgent" | "high" | "normal" | "low";
+
+const priorityOrder: Record<string, number> = {
+  urgent: 0,
+  high: 1,
+  normal: 2,
+  low: 3,
+};
+
 export function TasksClient({ tasks }: Props) {
-  const router = useRouter();
-  const [showNew, setShowNew] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newPriority, setNewPriority] = useState<"low" | "normal" | "high" | "urgent">("normal");
-  const [newDueDate, setNewDueDate] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
+  const [newOpen, setNewOpen] = useState(false);
 
-  const pending = tasks.filter((t) => !t.completed);
-  const done = tasks.filter((t) => t.completed);
+  const counts = useMemo(
+    () => ({
+      all: tasks.length,
+      pending: tasks.filter((t) => !t.completed).length,
+      done: tasks.filter((t) => t.completed).length,
+    }),
+    [tasks]
+  );
 
-  async function toggle(task: Task) {
-    try {
-      await fetch(`/api/tasks/${task.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ completed: !task.completed }),
-      });
-      router.refresh();
-    } catch (e) {
-      console.error(e);
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    let list = tasks;
+
+    if (statusFilter === "pending") list = list.filter((t) => !t.completed);
+    if (statusFilter === "done") list = list.filter((t) => t.completed);
+
+    if (priorityFilter !== "all") {
+      list = list.filter((t) => t.priority === priorityFilter);
     }
-  }
 
-  async function remove(taskId: string) {
-    if (!confirm("Supprimer cette tâche ?")) return;
-    try {
-      await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
-      router.refresh();
-    } catch (e) {
-      console.error(e);
+    if (q) {
+      list = list.filter(
+        (t) =>
+          t.title.toLowerCase().includes(q) ||
+          (t.description ?? "").toLowerCase().includes(q)
+      );
     }
-  }
 
-  async function createTask() {
-    if (!newTitle.trim()) return;
-    setLoading(true);
-    try {
-      await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: newTitle.trim(),
-          priority: newPriority,
-          due_date: newDueDate || null,
-        }),
-      });
-      setNewTitle("");
-      setNewDueDate("");
-      setNewPriority("normal");
-      setShowNew(false);
-      router.refresh();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }
+    // Tri : non complétées d'abord, puis par priorité, puis par échéance
+    return [...list].sort((a, b) => {
+      if ((a.completed ?? false) !== (b.completed ?? false)) {
+        return a.completed ? 1 : -1;
+      }
+      const pa = priorityOrder[a.priority] ?? 99;
+      const pb = priorityOrder[b.priority] ?? 99;
+      if (pa !== pb) return pa - pb;
+      return (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999");
+    });
+  }, [tasks, statusFilter, priorityFilter, search]);
+
+  const pending = filtered.filter((t) => !t.completed);
+  const done = filtered.filter((t) => t.completed);
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-2">
-        <PageHeader
-          title="Tâches"
-          subtitle={`${pending.length} en attente · ${done.length} terminées`}
-        />
-        <button
-          onClick={() => setShowNew(!showNew)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm"
-        >
-          <Plus className="h-4 w-4" />
-          Nouvelle tâche
-        </button>
-      </div>
+      <PageHeader
+        title="Tâches"
+        subtitle={`${counts.pending} en attente · ${counts.done} terminée${counts.done > 1 ? "s" : ""}`}
+        action={
+          <Button
+            variant="primary"
+            onClick={() => setNewOpen(true)}
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Nouvelle tâche
+          </Button>
+        }
+      />
 
-      {/* Modal nouveau */}
-      {showNew && (
-        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-slate-900">Nouvelle tâche</h3>
+      {/* Recherche */}
+      <div className="mb-4">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher une tâche..."
+            className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-slate-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          {search && (
             <button
-              onClick={() => setShowNew(false)}
-              className="text-slate-400 hover:text-slate-700"
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+              aria-label="Effacer"
             >
               <X className="h-4 w-4" />
             </button>
-          </div>
-          <div className="space-y-3">
-            <input
-              type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="Titre de la tâche"
-              autoFocus
-              className="w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <select
-                value={newPriority}
-                onChange={(e) => setNewPriority(e.target.value as any)}
-                className="px-3 py-2.5 rounded-lg border border-slate-300 text-sm"
-              >
-                <option value="low">Basse</option>
-                <option value="normal">Normale</option>
-                <option value="high">Haute</option>
-                <option value="urgent">Urgente</option>
-              </select>
-              <input
-                type="date"
-                value={newDueDate}
-                onChange={(e) => setNewDueDate(e.target.value)}
-                className="px-3 py-2.5 rounded-lg border border-slate-300 text-sm"
-              />
-            </div>
-            <button
-              onClick={createTask}
-              disabled={loading || !newTitle.trim()}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 disabled:bg-green-400 rounded-lg"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Plus className="h-4 w-4" />
-              )}
-              Créer
-            </button>
-          </div>
+          )}
         </div>
-      )}
-
-      {/* En attente */}
-      <div className="mb-8">
-        <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-3">
-          En attente ({pending.length})
-        </h2>
-        {pending.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-slate-500 text-sm">
-            🎉 Aucune tâche en attente
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {pending.map((task) => (
-              <div
-                key={task.id}
-                className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 hover:bg-slate-50"
-              >
-                <button
-                  onClick={() => toggle(task)}
-                  className="mt-0.5 text-slate-400 hover:text-green-500"
-                  aria-label="Marquer comme complétée"
-                >
-                  <Circle className="h-5 w-5" />
-                </button>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className={`text-xs font-semibold px-2 py-0.5 rounded ${getPriorityColor(
-                        task.priority
-                      )}`}
-                    >
-                      {getPriorityLabel(task.priority)}
-                    </span>
-                    {task.due_date && (
-                      <span className="text-xs text-slate-500">
-                        · {formatDate(task.due_date)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-sm font-semibold text-slate-900">
-                    {task.title}
-                  </div>
-                  {task.description && (
-                    <div className="text-xs text-slate-500 mt-0.5">
-                      {task.description}
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={() => remove(task.id)}
-                  className="text-slate-300 hover:text-red-500 p-1"
-                  aria-label="Supprimer"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* Terminées */}
-      {done.length > 0 && (
-        <div>
-          <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-3">
-            Terminées ({done.length})
-          </h2>
-          <div className="space-y-2">
-            {done.map((task) => (
-              <div
-                key={task.id}
-                className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 opacity-60"
+      {/* Filtres statut */}
+      <div className="flex flex-wrap gap-2 mb-3">
+        {(
+          [
+            { key: "all", label: "Toutes", color: "bg-slate-900 text-white" },
+            { key: "pending", label: "En attente", color: "bg-amber-500 text-white" },
+            { key: "done", label: "Terminées", color: "bg-emerald-600 text-white" },
+          ] as const
+        ).map((opt) => {
+          const isActive = statusFilter === opt.key;
+          return (
+            <button
+              key={opt.key}
+              onClick={() => setStatusFilter(opt.key)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                isActive
+                  ? `${opt.color} shadow-sm`
+                  : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              {opt.label}
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                  isActive ? "bg-white/20" : "bg-slate-100 text-slate-500"
+                }`}
               >
-                <button
-                  onClick={() => toggle(task)}
-                  className="mt-0.5 text-green-500"
-                >
-                  <CheckCircle2 className="h-5 w-5" />
-                </button>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-slate-500 line-through">
-                    {task.title}
-                  </div>
-                </div>
-                <button
-                  onClick={() => remove(task.id)}
-                  className="text-slate-300 hover:text-red-500 p-1"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                {counts[opt.key]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Filtres priorité */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {(
+          [
+            { key: "all", label: "Toutes priorités" },
+            { key: "urgent", label: "🔴 Urgentes" },
+            { key: "high", label: "🟠 Hautes" },
+            { key: "normal", label: "🔵 Normales" },
+            { key: "low", label: "⚪ Basses" },
+          ] as const
+        ).map((opt) => {
+          const isActive = priorityFilter === opt.key;
+          return (
+            <button
+              key={opt.key}
+              onClick={() => setPriorityFilter(opt.key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                isActive
+                  ? "bg-slate-900 text-white shadow-sm"
+                  : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Contenu */}
+      {filtered.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-white">
+          <EmptyState
+            icon={ListTodo}
+            title={
+              search || priorityFilter !== "all"
+                ? "Aucun résultat"
+                : statusFilter === "done"
+                ? "Aucune tâche terminée"
+                : statusFilter === "pending"
+                ? "Aucune tâche en attente 🎉"
+                : "Aucune tâche"
+            }
+            description={
+              search || priorityFilter !== "all"
+                ? "Essayez d'ajuster votre recherche ou vos filtres."
+                : statusFilter === "pending"
+                ? "Tout est à jour !"
+                : "Créez votre première tâche pour commencer."
+            }
+            action={
+              statusFilter !== "done" && !search && priorityFilter === "all" ? (
+                <Button onClick={() => setNewOpen(true)} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Nouvelle tâche
+                </Button>
+              ) : undefined
+            }
+          />
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* En attente */}
+          {pending.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-2 w-2 rounded-full bg-amber-500" />
+                <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                  À faire ({pending.length})
+                </h2>
               </div>
-            ))}
-          </div>
+              <div className="space-y-2">
+                {pending.map((task) => (
+                  <TaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Terminées */}
+          {done.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                  Terminées ({done.length})
+                </h2>
+              </div>
+              <div className="space-y-2">
+                {done.map((task) => (
+                  <TaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
+
+      {/* Modal création */}
+      <NewTaskModal open={newOpen} onClose={() => setNewOpen(false)} />
     </div>
   );
 }
