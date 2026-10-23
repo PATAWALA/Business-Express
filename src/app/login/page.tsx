@@ -12,8 +12,14 @@ export default async function LoginPage() {
   if (user) redirect("/admin");
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 bg-grid p-4">
-      <LoginForm />
+    <div className="min-h-screen relative flex items-center justify-center bg-slate-50 overflow-hidden p-4">
+      {/* Décor de fond */}
+      <div className="pointer-events-none absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-[#1E50FF]/10 blur-[120px]" />
+      <div className="pointer-events-none absolute -bottom-40 -left-40 h-[500px] w-[500px] rounded-full bg-[#FFC700]/20 blur-[120px]" />
+
+      <div className="relative w-full flex items-center justify-center">
+        <LoginForm />
+      </div>
     </div>
   );
 }
