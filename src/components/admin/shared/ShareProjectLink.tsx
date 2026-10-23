@@ -2,22 +2,18 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, MessageCircle, Link2, Share2 } from "lucide-react";
+import { Copy, Check, MessageCircle, Link2, Sparkles, UserPlus } from "lucide-react";
 import { Button } from "@/components/admin/ui/Button";
 import { useToast } from "@/components/admin/ui/ToastProvider";
 
-interface Props {
-  variant?: "card" | "compact";
-}
-
-export function ShareProjectLink({ variant = "card" }: Props) {
+export function ShareProjectLink({ variant = "card" }: { variant?: "card" | "compact" }) {
   const toast = useToast();
   const [copied, setCopied] = useState(false);
 
   const projectUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/projet`
-      : "https://business-express.vercel.app/projet";
+      : "https://business-express-one.vercel.app/projet";
 
   async function copyLink() {
     try {
@@ -31,7 +27,7 @@ export function ShareProjectLink({ variant = "card" }: Props) {
   }
 
   const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(
-    `Bonjour ! Je vous invite à déposer votre projet Business Express ici : ${projectUrl}\n\nDécrivez votre besoin (import, sourcing, etc.). Étude gratuite, réponse sous 48h. 🚀`
+    `Bonjour ! Vous avez un projet d'import/export avec Dubaï ? Remplissez ce formulaire en 30 secondes, nous étudierons votre demande gratuitement : ${projectUrl}`
   )}`;
 
   if (variant === "compact") {
@@ -57,37 +53,36 @@ export function ShareProjectLink({ variant = "card" }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border-2 border-dashed border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50/30 p-5 shadow-sm">
-      <div className="flex items-start gap-3 mb-4">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shrink-0 shadow-lg shadow-blue-500/30">
-          <Share2 className="h-5 w-5" />
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <div className="flex items-start gap-3 mb-5">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-white shrink-0">
+          <UserPlus className="h-5 w-5" />
         </div>
-        <div className="flex-1">
-          <h3 className="font-bold text-slate-900 text-base">
-            📤 Partagez votre lien de collecte
-          </h3>
-          <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-            Envoyez ce lien à vos prospects (WhatsApp, TikTok, Instagram...). Ils
-            déposent leur projet, et vous les retrouvez dans{" "}
-            <strong>Demandes projet</strong> automatiquement.
+        <div>
+          <h2 className="font-bold text-slate-900 text-base">
+            🎯 Attirez de nouveaux clients 24h/24
+          </h2>
+          <p className="text-sm text-slate-600 mt-1 leading-relaxed">
+            Partagez ce lien sur votre WhatsApp, TikTok ou Instagram. Vos futurs clients 
+            y décrivent leur projet. Vous les retrouvez directement dans <strong>Demandes projet</strong>, 
+            sans avoir à les chercher.
           </p>
         </div>
       </div>
 
-      <div className="rounded-xl bg-white border border-blue-200 p-3 mb-3">
+      <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 mb-3">
         <div className="flex items-center gap-2">
-          <Link2 className="h-4 w-4 text-blue-600 shrink-0" />
+          <Link2 className="h-4 w-4 text-slate-500 shrink-0" />
           <code className="flex-1 text-xs text-slate-700 truncate font-mono">
             {projectUrl}
           </code>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <Button
           onClick={copyLink}
           variant="outline"
-          size="sm"
           className="flex-1 gap-2 bg-white"
         >
           {copied ? (
@@ -108,18 +103,18 @@ export function ShareProjectLink({ variant = "card" }: Props) {
           rel="noopener noreferrer"
           className="flex-1"
         >
-          <Button variant="primary" size="sm" className="w-full gap-2">
+          <Button variant="primary" className="w-full gap-2 bg-emerald-500 hover:bg-emerald-600 border-0 text-white">
             <MessageCircle className="h-4 w-4" />
             Partager sur WhatsApp
           </Button>
         </a>
       </div>
 
-      <div className="mt-3 flex items-start gap-2 text-xs text-slate-600">
-        <span className="shrink-0">💡</span>
+      <div className="flex items-start gap-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-lg">
+        <Sparkles className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
         <p>
-          <strong>Astuce :</strong> mettez ce lien dans votre bio TikTok /
-          Instagram pour attirer de nouveaux clients 24h/24.
+          <strong>Astuce Pro :</strong> Mettez ce lien dans la bio de votre compte TikTok 
+          ou Instagram. Les clients peuvent déposer leur projet même quand vous dormez !
         </p>
       </div>
     </div>
