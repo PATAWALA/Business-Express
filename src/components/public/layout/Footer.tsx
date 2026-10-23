@@ -129,14 +129,17 @@ export function Footer() {
 
         {/* Ligne du bas avec lien discret vers login admin */}
         <div className="mt-12 border-t border-[#0F172A]/8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Link
-            href="/login"
-            title="Accéder à l'espace administration"
-            className="group text-xs text-[#0F172A]/50 hover:text-[#0F172A] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-          >
-            <Lock className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <span>© {new Date().getFullYear()} Business Express. Tous droits réservés.</span>
-          </Link>
+          <div className="text-xs text-[#0F172A]/50">
+            © {new Date().getFullYear()} Business Express.{" "}
+            <Link
+              href="/login"
+              title="Accéder à l'espace administration"
+              className="group inline-flex items-center gap-1 hover:text-[#0F172A] transition-colors cursor-pointer"
+            >
+              <Lock className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span>Tous droits réservés.</span>
+            </Link>
+          </div>
 
           <div className="flex items-center gap-5 text-xs text-[#0F172A]/50">
             <Link href="#" className="hover:text-[#0F172A] transition-colors">
