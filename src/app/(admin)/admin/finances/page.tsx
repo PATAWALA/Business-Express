@@ -1,16 +1,24 @@
 // src/app/(admin)/admin/finances/page.tsx
-import { PageHeader } from "@/components/admin/ui/PageHeader";
-import { FinanceSummary } from "@/components/admin/finance/FinanceSummary";
-import { mockOrders } from "@/lib/mockData";
+import { FinanceClient } from "@/components/admin/finance/FinanceClient";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-export default function FinancesPage() {
+export const dynamic = "force-dynamic";
+
+export default async function FinancesPage() {
+  const supabase = createAdminClient();
+
+  const [{ data: orders }, { data: settings }] = await Promise.all([
+    supabase
+      .from("orders")
+      .select("*, clients(*)")
+      .order("created_at", { ascending: false }),
+    supabase.from("settings").select("*").eq("id", 1).single(),
+  ]);
+
   return (
-    <div>
-      <PageHeader
-        title="Trésorerie & Marges"
-        subtitle="Vue financière de toutes vos commandes"
-      />
-      <FinanceSummary orders={mockOrders} />
-    </div>
+    <FinanceClient
+      orders={orders ?? []}
+      exchangeRate={settings?.exchange_rate_aed_to_fcfa ?? 762}
+    />
   );
 }

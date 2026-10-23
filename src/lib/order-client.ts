@@ -4,6 +4,7 @@ import type { Tables } from "@/lib/supabase/database.types";
 export type Client = Tables<"clients">;
 export type Order = Tables<"orders">;
 export type Settings = Tables<"settings">;
+export type Task = Tables<"tasks">;
 
 export async function fetchClients(): Promise<Client[]> {
   const res = await fetch("/api/clients", { cache: "no-store" });

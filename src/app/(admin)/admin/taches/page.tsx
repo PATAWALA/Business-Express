@@ -1,16 +1,16 @@
 // src/app/(admin)/admin/taches/page.tsx
-import { PageHeader } from "@/components/admin/ui/PageHeader";
-import { UrgentTasks } from "@/components/admin/dashboard/UrgentTasks";
-import { mockTasks } from "@/lib/mockData";
+import { TasksClient } from "@/components/admin/dashboard/TasksClient";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-export default function TachesPage() {
-  return (
-    <div>
-      <PageHeader
-        title="Tâches"
-        subtitle={`${mockTasks.filter((t) => !t.completed).length} tâches en attente`}
-      />
-      <UrgentTasks tasks={mockTasks} />
-    </div>
-  );
+export const dynamic = "force-dynamic";
+
+export default async function TachesPage() {
+  const supabase = createAdminClient();
+  const { data: tasks } = await supabase
+    .from("tasks")
+    .select("*")
+    .order("completed", { ascending: true })
+    .order("due_date", { ascending: true });
+
+  return <TasksClient tasks={tasks ?? []} />;
 }
