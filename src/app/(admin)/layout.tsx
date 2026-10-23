@@ -65,7 +65,6 @@ export default function AdminLayout({
           <AdminHeader
             userEmail={userEmail}
             onToggleSidebarCollapse={() => setCollapsed(!collapsed)}
-            onOpenMobileSidebar={() => setMobileOpen(true)}
           />
           <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
             {children}
