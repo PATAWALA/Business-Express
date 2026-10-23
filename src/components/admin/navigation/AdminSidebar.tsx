@@ -27,6 +27,7 @@ const navItems = [
 interface Props {
   collapsed: boolean;
   mobileOpen: boolean;
+  userEmail?: string;
   onToggleCollapse: () => void;
   onCloseMobile: () => void;
 }
@@ -34,66 +35,71 @@ interface Props {
 export function AdminSidebar({
   collapsed,
   mobileOpen,
+  userEmail = "",
   onToggleCollapse,
   onCloseMobile,
 }: Props) {
   const pathname = usePathname();
 
+  const initials = userEmail
+    ? userEmail.substring(0, 2).toUpperCase()
+    : "BE";
+
   return (
     <>
-      {/* Overlay mobile */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm lg:hidden"
           onClick={onCloseMobile}
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 h-screen bg-slate-900 text-white flex flex-col transition-all duration-300 z-50",
-          // Desktop
+          "fixed top-0 left-0 h-screen flex flex-col transition-all duration-300 z-50",
+          // Fond blanc pur + bordure droite
+          "bg-white border-r border-slate-200",
           "lg:translate-x-0",
           collapsed ? "lg:w-20" : "lg:w-64",
-          // Mobile
           "w-64",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        {/* Header sidebar */}
+        {/* Logo header */}
         <div
           className={cn(
-            "flex items-center h-16 border-b border-slate-800",
+            "flex items-center h-16 border-b border-slate-100",
             collapsed ? "justify-center px-2" : "justify-between px-4"
           )}
         >
-          <Link href="/admin" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 font-bold text-sm shrink-0">
+          <Link href="/admin" className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 font-bold text-sm text-white shrink-0 shadow-lg shadow-blue-500/30">
               BE
             </div>
             {!collapsed && (
               <div className="flex flex-col leading-none">
-                <div className="text-xs font-bold">BUSINESS</div>
-                <div className="text-xs font-bold text-blue-400">EXPRESS</div>
+                <div className="text-xs font-bold text-slate-900 tracking-wide">
+                  BUSINESS
+                </div>
+                <div className="text-xs font-bold text-blue-600 tracking-wide">
+                  EXPRESS
+                </div>
               </div>
             )}
           </Link>
 
-          {/* Bouton fermer sur mobile */}
           <button
             onClick={onCloseMobile}
-            className="lg:hidden flex h-8 w-8 items-center justify-center rounded-lg hover:bg-slate-800"
+            className="lg:hidden flex h-8 w-8 items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500"
             aria-label="Fermer"
           >
             <X className="h-4 w-4" />
           </button>
 
-          {/* Bouton collapse sur desktop */}
           {!collapsed && (
             <button
               onClick={onToggleCollapse}
-              className="hidden lg:flex h-8 w-8 items-center justify-center rounded-lg hover:bg-slate-800"
+              className="hidden lg:flex h-8 w-8 items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
               aria-label="Réduire"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -103,6 +109,11 @@ export function AdminSidebar({
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+          {!collapsed && (
+            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-3 py-2">
+              Menu
+            </div>
+          )}
           {navItems.map((item) => {
             const isActive =
               pathname === item.href ||
@@ -114,32 +125,63 @@ export function AdminSidebar({
                 onClick={onCloseMobile}
                 title={collapsed ? item.label : undefined}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 relative group",
                   collapsed ? "justify-center" : "",
                   isActive
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                    ? "bg-gradient-to-r from-blue-50 to-blue-100/50 text-blue-700 shadow-sm shadow-blue-100"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                 )}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
+                {/* Indicateur actif à gauche */}
+                {isActive && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-blue-600" />
+                )}
+                <item.icon
+                  className={cn(
+                    "h-5 w-5 shrink-0 transition-colors",
+                    isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
+                  )}
+                />
                 {!collapsed && <span>{item.label}</span>}
               </Link>
             );
           })}
         </nav>
 
-        {/* Footer - bouton expand si collapsed */}
-        {collapsed && (
-          <div className="p-3 border-t border-slate-800">
+        {/* Footer - Profil */}
+        <div className="border-t border-slate-100 p-3">
+          {!collapsed ? (
+            <div className="flex items-center gap-2.5 px-2 py-1.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs font-bold shrink-0">
+                {initials}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-slate-900 truncate">
+                  Prince Bockson
+                </div>
+                <div className="text-[11px] text-slate-500 truncate">
+                  {userEmail || "Administrateur"}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-center">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs font-bold">
+                {initials}
+              </div>
+            </div>
+          )}
+
+          {collapsed && (
             <button
               onClick={onToggleCollapse}
-              className="w-full flex items-center justify-center h-10 rounded-lg hover:bg-slate-800 text-slate-400"
+              className="w-full flex items-center justify-center h-8 mt-2 rounded-lg hover:bg-slate-100 text-slate-400 mt-3"
               aria-label="Étendre"
             >
               <ChevronLeft className="h-4 w-4 rotate-180" />
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </aside>
     </>
   );

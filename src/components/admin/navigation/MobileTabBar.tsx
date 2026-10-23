@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { MobileMoreSheet } from "./MobileMoreSheet";
 import { ProfileModal } from "@/components/admin/profile/ProfileModal";
+import { cn } from "@/lib/utils";
 
 const mainTabs = [
   { href: "/admin", label: "Accueil", icon: LayoutDashboard },
@@ -30,16 +31,15 @@ export function MobileTabBar({ userEmail = "" }: Props) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  // Pages secondaires (Tâches, Paramètres) → "Plus" devient actif
   const isSecondaryActive =
     pathname.startsWith("/admin/taches") ||
     pathname.startsWith("/admin/parametres");
 
   return (
     <>
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-[0_-2px_10px_rgba(0,0,0,0.04)]">
-        <div className="flex justify-around items-stretch h-16">
-          {/* 4 onglets principaux */}
+      {/* TabBar blanche avec ombre subtile */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-[0_-2px_12px_rgba(15,23,42,0.06)]">
+        <div className="flex justify-around items-stretch h-16 px-1">
           {mainTabs.map((tab) => {
             const isActive =
               pathname === tab.href ||
@@ -48,17 +48,25 @@ export function MobileTabBar({ userEmail = "" }: Props) {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`flex flex-col items-center justify-center gap-0.5 flex-1 transition-colors ${
-                  isActive ? "text-blue-600" : "text-slate-500"
-                }`}
+                className="relative flex flex-col items-center justify-center gap-0.5 flex-1"
               >
+                {/* Indicateur actif */}
+                {isActive && (
+                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 rounded-b-full bg-blue-600" />
+                )}
                 <tab.icon
-                  className={`h-5 w-5 ${isActive ? "stroke-[2.5]" : ""}`}
+                  className={cn(
+                    "h-5 w-5 transition-colors",
+                    isActive ? "text-blue-600 stroke-[2.5]" : "text-slate-400"
+                  )}
                 />
                 <span
-                  className={`text-[10px] ${
-                    isActive ? "font-semibold" : "font-medium"
-                  }`}
+                  className={cn(
+                    "text-[10px] transition-colors",
+                    isActive
+                      ? "text-blue-600 font-semibold"
+                      : "text-slate-500 font-medium"
+                  )}
                 >
                   {tab.label}
                 </span>
@@ -69,18 +77,26 @@ export function MobileTabBar({ userEmail = "" }: Props) {
           {/* Bouton Plus */}
           <button
             onClick={() => setMoreOpen(true)}
-            className={`flex flex-col items-center justify-center gap-0.5 flex-1 transition-colors ${
-              isSecondaryActive ? "text-blue-600" : "text-slate-500"
-            }`}
-            aria-label="Plus d'options"
+            className="relative flex flex-col items-center justify-center gap-0.5 flex-1"
           >
+            {isSecondaryActive && (
+              <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 rounded-b-full bg-blue-600" />
+            )}
             <MoreHorizontal
-              className={`h-5 w-5 ${isSecondaryActive ? "stroke-[2.5]" : ""}`}
+              className={cn(
+                "h-5 w-5 transition-colors",
+                isSecondaryActive
+                  ? "text-blue-600 stroke-[2.5]"
+                  : "text-slate-400"
+              )}
             />
             <span
-              className={`text-[10px] ${
-                isSecondaryActive ? "font-semibold" : "font-medium"
-              }`}
+              className={cn(
+                "text-[10px] transition-colors",
+                isSecondaryActive
+                  ? "text-blue-600 font-semibold"
+                  : "text-slate-500 font-medium"
+              )}
             >
               Plus
             </span>
