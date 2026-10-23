@@ -122,6 +122,59 @@ export type Database = {
           }
         ]
       }
+      project_requests: {
+        Row: {
+          id: string
+          client_id: string | null
+          full_name: string
+          whatsapp: string
+          city: string
+          project_type: string | null
+          budget: string | null
+          description: string
+          status: "new" | "contacted" | "quoted" | "converted" | "archived"
+          notes: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          client_id?: string | null
+          full_name: string
+          whatsapp: string
+          city: string
+          project_type?: string | null
+          budget?: string | null
+          description: string
+          status?: "new" | "contacted" | "quoted" | "converted" | "archived"
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          client_id?: string | null
+          full_name?: string
+          whatsapp?: string
+          city?: string
+          project_type?: string | null
+          budget?: string | null
+          description?: string
+          status?: "new" | "contacted" | "quoted" | "converted" | "archived"
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       settings: {
         Row: {
           id: number

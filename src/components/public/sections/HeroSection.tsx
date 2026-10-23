@@ -1,6 +1,8 @@
+// src/components/public/sections/HeroSection.tsx
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import {
   ArrowRight,
   ShieldCheck,
@@ -9,10 +11,10 @@ import {
   MapPin,
   Package,
   TrendingUp,
+  Rocket,
 } from "lucide-react";
 import { Button } from "@/components/public/ui/Button";
 import { Badge } from "@/components/public/ui/Badge";
-import { buildWhatsAppLink } from "@/lib/public-utils";
 
 export function HeroSection() {
   return (
@@ -83,23 +85,31 @@ export function HeroSection() {
               transition={{ duration: 0.6, delay: 0.35 }}
               className="mt-10 flex flex-col sm:flex-row gap-3"
             >
-              <a href="#calculateur">
+              <Link href="/projet">
                 <Button variant="primary" size="lg" className="w-full sm:w-auto">
-                  Calculer mon Devis d'Importation
+                  <Rocket className="h-4 w-4" />
+                  Déposer mon projet
                   <ArrowRight className="h-4 w-4" />
                 </Button>
-              </a>
-              <a
-                href={buildWhatsAppLink(
-                  "Bonjour, je voudrais parler à un agent à Dubaï."
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              </Link>
+              <a href="#services">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  Parler à un Agent à Dubaï
+                  Découvrir nos services
                 </Button>
               </a>
+            </motion.div>
+
+            {/* Micro-réassurance */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.45 }}
+              className="mt-6 flex items-center gap-2 text-xs text-[#0F172A]/60"
+            >
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+              <span>
+                <strong>Étude gratuite</strong> · Sans engagement · Réponse sous 48h
+              </span>
             </motion.div>
           </div>
 

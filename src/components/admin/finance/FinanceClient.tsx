@@ -10,8 +10,9 @@ import {
   Calendar,
 } from "lucide-react";
 import type { Order, Client } from "@/lib/order-client";
-import { formatAED, formatFCFA, formatDate } from "@/lib/admin-utils";
+import { formatAED, formatFCFA } from "@/lib/admin-utils";
 import { PageHeader } from "@/components/admin/ui/PageHeader";
+import { PageHelp } from "@/components/admin/ui/PageHelp";
 import { StatCard } from "@/components/admin/ui/StatCard";
 import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { Button } from "@/components/admin/ui/Button";
@@ -126,6 +127,41 @@ export function FinanceClient({ orders, exchangeRate }: Props) {
           </Button>
         }
       />
+
+      {/* Encart pédagogique */}
+      <div className="mb-4">
+        <PageHelp
+          title="💡 Comprendre vos chiffres financiers"
+          description="Trésorerie, marges et performances de votre activité"
+          steps={[
+            {
+              label: "Chiffre d'affaires",
+              description:
+                "C'est la somme totale de tout ce que vous avez VENDU (toutes commandes confondues). Peu importe si le client a payé ou pas encore.",
+            },
+            {
+              label: "Marge nette",
+              description:
+                "C'est votre VRAI bénéfice = (Prix de vente) - (Prix d'achat + Transport) × Taux de change. C'est ce que vous gagnez réellement.",
+            },
+            {
+              label: "Argent engagé",
+              description:
+                "C'est l'argent que vous avez déjà dépensé chez le fournisseur et pour le transport (en AED). Argent sorti de votre poche.",
+            },
+            {
+              label: "Filtres par période",
+              description:
+                "Choisissez 'Tout', '30 derniers jours' ou '90 derniers jours' pour voir vos performances sur une période précise.",
+            },
+          ]}
+          tips={[
+            "Une marge négative = vous vendez à perte. Vérifiez le prix d'achat.",
+            "Le taux de change AED → FCFA se modifie dans /admin/parametres.",
+            "Exportez en CSV pour analyser dans Excel.",
+          ]}
+        />
+      </div>
 
       {/* Période */}
       <div className="flex flex-wrap gap-2 mb-6">

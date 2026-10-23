@@ -1,19 +1,18 @@
+// src/components/public/layout/Header.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, MessageSquare } from "lucide-react";
+import { Menu, Rocket } from "lucide-react";
 import { Button } from "@/components/public/ui/Button";
 import { MobileNav } from "./MobileNav";
-import { buildWhatsAppLink } from "@/lib/public-utils";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
   { label: "Services", href: "#services" },
   { label: "Sourcing & Import", href: "#catalogue" },
   { label: "Tourisme & VIP", href: "#vip" },
-  { label: "Calculateur", href: "#calculateur" },
   { label: "Contact", href: "#contact" },
 ];
 
@@ -39,6 +38,7 @@ export function Header() {
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-20 items-center justify-between py-3">
+            {/* Logo + statut */}
             <Link href="/" className="flex items-center gap-3">
               <Image
                 src="/logo.png"
@@ -62,6 +62,7 @@ export function Header() {
               </div>
             </Link>
 
+            {/* Navigation desktop */}
             <nav className="hidden lg:flex items-center gap-8">
               {navLinks.map((l) => (
                 <Link
@@ -74,25 +75,21 @@ export function Header() {
               ))}
             </nav>
 
+            {/* CTA principal */}
             <div className="hidden lg:flex items-center gap-3">
-              <a
-                href={buildWhatsAppLink(
-                  "Bonjour Business Express, je souhaite un devis rapide."
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <Link href="/projet">
                 <Button
                   variant="gold"
                   size="sm"
                   className="animate-pulse-ring"
                 >
-                  <MessageSquare className="h-4 w-4" />
-                  Demander un Devis
+                  <Rocket className="h-4 w-4" />
+                  Déposer mon projet
                 </Button>
-              </a>
+              </Link>
             </div>
 
+            {/* Toggle mobile */}
             <button
               onClick={() => setOpen(true)}
               className="lg:hidden flex h-10 w-10 items-center justify-center rounded-full border border-[#0F172A]/10 bg-white"

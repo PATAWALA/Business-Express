@@ -5,7 +5,9 @@ import { useMemo, useState } from "react";
 import { Search, Users, X } from "lucide-react";
 import type { Client } from "@/lib/order-client";
 import { PageHeader } from "@/components/admin/ui/PageHeader";
+import { PageHelp } from "@/components/admin/ui/PageHelp";
 import { EmptyState } from "@/components/admin/ui/EmptyState";
+import { ShareProjectLink } from "@/components/admin/shared/ShareProjectLink";
 import { NewClientButton } from "./NewClientButton";
 import { ClientCard } from "./ClientCard";
 import { ClientDetailModal } from "./ClientDetailModal";
@@ -47,7 +49,6 @@ export function ClientsClient({ clients }: Props) {
       );
     }
 
-    // Tri : clients par dépenses desc, puis prospects par dépenses desc
     return [...list].sort((a, b) => {
       if (a.type !== b.type) return a.type === "client" ? -1 : 1;
       return (b.total_spent_fcfa ?? 0) - (a.total_spent_fcfa ?? 0);
@@ -61,6 +62,46 @@ export function ClientsClient({ clients }: Props) {
         subtitle={`${counts.client} clients · ${counts.prospect} prospects`}
         action={<NewClientButton />}
       />
+
+      {/* Encart pédagogique */}
+      <div className="mb-4">
+        <PageHelp
+          title="💡 Comment gérer vos clients"
+          description="Tous vos clients et prospects au même endroit"
+          steps={[
+            {
+              label: "Comprenez la différence",
+              description:
+                "🟢 Client = a déjà acheté. 🟡 Prospect = n'a pas encore acheté (vient du formulaire /projet).",
+            },
+            {
+              label: "Ajoutez un client manuellement",
+              description:
+                "Cliquez '+ Nouveau client'. Remplissez au minimum le nom et le WhatsApp.",
+            },
+            {
+              label: "Ou partagez votre lien /projet",
+              description:
+                "Envoyez ce lien à vos prospects. Ils remplissent eux-mêmes, et apparaissent automatiquement dans cette liste.",
+            },
+            {
+              label: "Ouvrez une fiche client",
+              description:
+                "Cliquez sur une carte pour voir : historique, total dépensé, marge générée, notes internes. Vous pouvez tout modifier.",
+            },
+          ]}
+          tips={[
+            "Les badges '🆕 Nouveau' apparaissent pour les clients ajoutés dans les 7 derniers jours.",
+            "Le bouton WhatsApp ouvre directement la conversation avec le client.",
+            "Les notes internes sont visibles uniquement par vous.",
+          ]}
+        />
+      </div>
+
+      {/* Lien de collecte */}
+      <div className="mb-6">
+        <ShareProjectLink variant="card" />
+      </div>
 
       {/* Recherche */}
       <div className="mb-4">
@@ -156,7 +197,6 @@ export function ClientsClient({ clients }: Props) {
         </div>
       )}
 
-      {/* Modal détail */}
       <ClientDetailModal
         clientId={selectedId}
         onClose={() => setSelectedId(null)}

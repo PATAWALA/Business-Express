@@ -1,10 +1,10 @@
+// src/components/public/layout/MobileNav.tsx
 "use client";
 
-import { X, MessageSquare } from "lucide-react";
+import { X, Rocket } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/public/ui/Button";
-import { buildWhatsAppLink } from "@/lib/public-utils";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface Props {
@@ -67,20 +67,17 @@ export function MobileNav({ open, onClose, links }: Props) {
               ))}
             </nav>
 
-            <div className="mt-auto pt-6">
-              <a
-                href={buildWhatsAppLink(
-                  "Bonjour Business Express, je souhaite un devis rapide."
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-              >
+            {/* CTA */}
+            <div className="mt-auto pt-6 space-y-2">
+              <Link href="/projet" onClick={onClose} className="block">
                 <Button variant="gold" size="lg" className="w-full">
-                  <MessageSquare className="h-4 w-4" />
-                  Devis WhatsApp
+                  <Rocket className="h-4 w-4" />
+                  Déposer mon projet
                 </Button>
-              </a>
+              </Link>
+              <p className="text-xs text-center text-[#0F172A]/60">
+                Étude gratuite · Réponse sous 48h
+              </p>
             </div>
           </motion.div>
         </>

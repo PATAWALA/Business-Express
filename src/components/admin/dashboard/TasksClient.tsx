@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Plus, Search, X, ListTodo, CheckCircle2 } from "lucide-react";
 import type { Task } from "@/lib/order-client";
 import { PageHeader } from "@/components/admin/ui/PageHeader";
+import { PageHelp } from "@/components/admin/ui/PageHelp";
 import { Button } from "@/components/admin/ui/Button";
 import { EmptyState } from "@/components/admin/ui/EmptyState";
 import { TaskCard } from "./TaskCard";
@@ -58,7 +59,6 @@ export function TasksClient({ tasks }: Props) {
       );
     }
 
-    // Tri : non complétées d'abord, puis par priorité, puis par échéance
     return [...list].sort((a, b) => {
       if ((a.completed ?? false) !== (b.completed ?? false)) {
         return a.completed ? 1 : -1;
@@ -89,6 +89,41 @@ export function TasksClient({ tasks }: Props) {
           </Button>
         }
       />
+
+      {/* Encart pédagogique */}
+      <div className="mb-4">
+        <PageHelp
+          title="💡 Comment gérer vos tâches"
+          description="Votre mémoire externe : ne rien oublier, jamais"
+          steps={[
+            {
+              label: "Créez une tâche",
+              description:
+                "Cliquez '+ Nouvelle tâche'. Ajoutez un titre, une priorité et une échéance si nécessaire.",
+            },
+            {
+              label: "Cochez quand c'est fait",
+              description:
+                "Cliquez sur le cercle à gauche pour marquer une tâche comme terminée. Elle glisse automatiquement dans 'Terminées'.",
+            },
+            {
+              label: "Les tâches automatiques",
+              description:
+                "Quand une commande est créée, le système génère automatiquement 2-3 tâches (appeler client, contacter fournisseur, etc.).",
+            },
+            {
+              label: "Priorisez",
+              description:
+                "🔴 Urgent = à faire aujourd'hui. 🟠 Haute = cette semaine. 🔵 Normale = quand vous pouvez. ⚪ Basse = pas pressé.",
+            },
+          ]}
+          tips={[
+            "Les tâches en retard s'affichent en rouge avec '(en retard)'.",
+            "Les tâches urgentes apparaissent aussi sur votre dashboard pour ne pas les oublier.",
+            "Utilisez les filtres pour voir uniquement une priorité ou un statut.",
+          ]}
+        />
+      </div>
 
       {/* Recherche */}
       <div className="mb-4">
@@ -207,7 +242,6 @@ export function TasksClient({ tasks }: Props) {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* En attente */}
           {pending.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -224,7 +258,6 @@ export function TasksClient({ tasks }: Props) {
             </div>
           )}
 
-          {/* Terminées */}
           {done.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -243,7 +276,6 @@ export function TasksClient({ tasks }: Props) {
         </div>
       )}
 
-      {/* Modal création */}
       <NewTaskModal open={newOpen} onClose={() => setNewOpen(false)} />
     </div>
   );

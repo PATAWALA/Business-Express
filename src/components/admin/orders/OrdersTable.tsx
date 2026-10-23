@@ -1,8 +1,8 @@
 // src/components/admin/orders/OrdersTable.tsx
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Plus,
   ArrowUpDown,
@@ -16,6 +16,7 @@ import {
 import type { Order, Client } from "@/lib/order-client";
 import { formatFCFA, formatDate } from "@/lib/admin-utils";
 import { PageHeader } from "@/components/admin/ui/PageHeader";
+import { PageHelp } from "@/components/admin/ui/PageHelp";
 import { Button } from "@/components/admin/ui/Button";
 import { Avatar } from "@/components/admin/ui/Avatar";
 import { EmptyState } from "@/components/admin/ui/EmptyState";
@@ -37,29 +38,38 @@ const PAGE_SIZE = 20;
 
 export function OrdersTable({ initialOrders }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [orders, setOrders] = useState(initialOrders);
   const [newOpen, setNewOpen] = useState(false);
   const [detailOrder, setDetailOrder] = useState<OrderWithClient | null>(null);
 
-  // Filtres & tri
+  // Lecture du filtre depuis l'URL (?status=freight)
+  const initialFilter = (searchParams.get("status") as FilterKey) || "all";
+
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<FilterKey>("all");
+  const [filter, setFilter] = useState<FilterKey>(initialFilter);
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
 
-  // Compteurs par statut
-  const counts = useMemo(() => {
-    return {
+  // Sync si l'URL change
+  useEffect(() => {
+    const urlFilter = (searchParams.get("status") as FilterKey) || "all";
+    setFilter(urlFilter);
+    setPage(1);
+  }, [searchParams]);
+
+  const counts = useMemo(
+    () => ({
       all: orders.length,
       sourcing: orders.filter((o) => o.status === "sourcing").length,
       purchased: orders.filter((o) => o.status === "purchased").length,
       freight: orders.filter((o) => o.status === "freight").length,
       delivered: orders.filter((o) => o.status === "delivered").length,
-    };
-  }, [orders]);
+    }),
+    [orders]
+  );
 
-  // Filtrage + tri
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     let list = orders;
@@ -91,7 +101,6 @@ export function OrdersTable({ initialOrders }: Props) {
     });
   }, [orders, filter, search, sortKey, sortDir]);
 
-  // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageStart = (safePage - 1) * PAGE_SIZE;
@@ -123,7 +132,6 @@ export function OrdersTable({ initialOrders }: Props) {
 
   return (
     <div>
-      {/* Header */}
       <PageHeader
         title="Commandes"
         subtitle={`${orders.length} commande${orders.length > 1 ? "s" : ""} au total`}
@@ -151,7 +159,41 @@ export function OrdersTable({ initialOrders }: Props) {
         }
       />
 
-      {/* Filtres */}
+      {/* Encart pédagogique */}
+      <div className="mb-4">
+        <PageHelp
+          title="💡 Comment gérer vos commandes"
+          description="Suivez chaque commande du sourcing à la livraison"
+          steps={[
+            {
+              label: "Créez une commande",
+              description:
+                "Cliquez sur '+ Nouvelle commande'. Vous pouvez aussi recevoir des commandes automatiques via le lien /commander.",
+            },
+            {
+              label: "Remplissez les 3 étapes",
+              description:
+                "Étape 1 : Client + Article. Étape 2 : Fournisseur + Prix d'achat (facultatif). Étape 3 : Prix de vente + Livraison.",
+            },
+            {
+              label: "Suivez le statut",
+              description:
+                "🟡 Sourcing → 🔵 Acheté → 🟣 En fret → 🟢 Livré. Cliquez sur le badge pour changer d'étape.",
+            },
+            {
+              label: "Complétez les prix plus tard",
+              description:
+                "Si vous ne connaissez pas encore le prix d'achat, laissez vide. Ouvrez la commande plus tard pour le remplir. La marge se calcule automatiquement.",
+            },
+          ]}
+          tips={[
+            "Utilisez la barre de recherche pour retrouver une commande (par réf, client ou article).",
+            "Les filtres par statut vous permettent de voir uniquement les colis en transit.",
+            "Cliquez sur une ligne pour ouvrir le détail et modifier.",
+          ]}
+        />
+      </div>
+
       <OrdersFilters
         search={search}
         onSearchChange={(v) => {
@@ -166,7 +208,6 @@ export function OrdersTable({ initialOrders }: Props) {
         counts={counts}
       />
 
-      {/* Table / Cards */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
         {filtered.length === 0 ? (
           <EmptyState
@@ -188,7 +229,7 @@ export function OrdersTable({ initialOrders }: Props) {
           />
         ) : (
           <>
-            {/* Desktop table */}
+            {/* Desktop */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 border-b border-slate-200">
@@ -230,10 +271,7 @@ export function OrdersTable({ initialOrders }: Props) {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <Avatar
-                            name={order.clients?.name ?? "?"}
-                            size="sm"
-                          />
+                          <Avatar name={order.clients?.name ?? "?"} size="sm" />
                           <span className="text-slate-700 text-sm">
                             {order.clients?.name ?? "—"}
                           </span>
@@ -267,7 +305,7 @@ export function OrdersTable({ initialOrders }: Props) {
               </table>
             </div>
 
-            {/* Mobile cards */}
+            {/* Mobile */}
             <div className="md:hidden divide-y divide-slate-100">
               {paginated.map((order) => (
                 <div
@@ -341,7 +379,6 @@ export function OrdersTable({ initialOrders }: Props) {
         )}
       </div>
 
-      {/* Modals */}
       <NewOrderModal
         open={newOpen}
         onClose={() => setNewOpen(false)}

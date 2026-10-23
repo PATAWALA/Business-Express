@@ -1,7 +1,13 @@
+// src/components/public/layout/Footer.tsx
 import Link from "next/link";
 import Image from "next/image";
-import { FaInstagram, FaTiktok, FaWhatsapp, FaEnvelope } from "react-icons/fa";
-import { buildWhatsAppLink } from "@/lib/public-utils";
+import {
+  FaInstagram,
+  FaTiktok,
+  FaWhatsapp,
+  FaEnvelope,
+} from "react-icons/fa";
+import { Rocket } from "lucide-react";
 
 export function Footer() {
   return (
@@ -26,9 +32,19 @@ export function Footer() {
               logistique sécurisée et accompagnement VIP.
             </p>
 
+            {/* CTA projet */}
+            <Link
+              href="/projet"
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#1E50FF] hover:bg-[#4E75FF] text-white text-sm font-semibold px-4 py-2.5 transition-colors shadow-lg shadow-[#1E50FF]/25"
+            >
+              <Rocket className="h-4 w-4" />
+              Déposer mon projet
+            </Link>
+
+            {/* Réseaux */}
             <div className="mt-5 flex items-center gap-3">
               <a
-                href={buildWhatsAppLink("Bonjour Business Express !")}
+                href="https://wa.me/243970000000"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-[#25D366]/15 text-[#25D366] hover:bg-[#25D366]/25 transition-colors"
@@ -72,7 +88,6 @@ export function Footer() {
               {[
                 { l: "Services", h: "#services" },
                 { l: "Catalogue", h: "#catalogue" },
-                { l: "Calculateur", h: "#calculateur" },
                 { l: "Contact", h: "#contact" },
               ].map((x) => (
                 <li key={x.h}>
@@ -84,6 +99,14 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link
+                  href="/projet"
+                  className="text-[#1E50FF] font-semibold hover:underline"
+                >
+                  Déposer mon projet →
+                </Link>
+              </li>
             </ul>
           </div>
 

@@ -11,11 +11,14 @@ import {
   AlertCircle,
   Plus,
   RefreshCw,
+  ArrowRight,
 } from "lucide-react";
 import type { Order, Task, Client } from "@/lib/order-client";
 import { formatFCFA } from "@/lib/admin-utils";
 import { StatCard } from "@/components/admin/ui/StatCard";
 import { Button } from "@/components/admin/ui/Button";
+import { PageHelp } from "@/components/admin/ui/PageHelp";
+import { ShareProjectLink } from "@/components/admin/shared/ShareProjectLink";
 import { RevenueChart } from "./RevenueChart";
 import { UrgentTasks } from "./UrgentTasks";
 import { RecentOrders } from "./RecentOrders";
@@ -42,6 +45,7 @@ export function DashboardClient({ orders, tasks }: Props) {
     const marginRate =
       totalRevenue > 0 ? ((totalMargin / totalRevenue) * 100).toFixed(1) : "0";
 
+    // Sparklines sur 6 mois
     const revenueSparkline: number[] = [];
     const marginSparkline: number[] = [];
     for (let i = 5; i >= 0; i--) {
@@ -84,9 +88,20 @@ export function DashboardClient({ orders, tasks }: Props) {
 
   const pendingTasksCount = tasks.filter((t) => !t.completed).length;
 
+  // Nouveaux projets reçus dans les dernières 24h
+  const newProjectsCount = orders.filter((o) => {
+    if (!o.created_at) return false;
+    return (
+      o.source === "public" &&
+      Date.now() - new Date(o.created_at).getTime() < 24 * 3600000
+    );
+  }).length;
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* ============================================================ */}
+      {/* HEADER                                                       */}
+      {/* ============================================================ */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1 capitalize">
@@ -120,42 +135,122 @@ export function DashboardClient({ orders, tasks }: Props) {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* ============================================================ */}
+      {/* ALERTE : Nouveaux projets                                    */}
+      {/* ============================================================ */}
+      {newProjectsCount > 0 && (
+        <Link
+          href="/admin/projets"
+          className="flex items-center gap-3 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 hover:shadow-md transition-shadow"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shrink-0 animate-pulse text-lg">
+            🆕
+          </div>
+          <div className="flex-1">
+            <div className="text-sm font-bold text-blue-900">
+              {newProjectsCount} nouveau{newProjectsCount > 1 ? "x" : ""} projet
+              {newProjectsCount > 1 ? "s" : ""} reçu
+              {newProjectsCount > 1 ? "s" : ""} dans les dernières 24h
+            </div>
+            <div className="text-xs text-blue-700">
+              Cliquez pour voir les prospects
+            </div>
+          </div>
+          <ArrowRight className="h-5 w-5 text-blue-600" />
+        </Link>
+      )}
+
+      {/* ============================================================ */}
+      {/* ENCART AIDE (PageHelp réutilisable)                          */}
+      {/* ============================================================ */}
+      <PageHelp
+        title="💡 Comment utiliser votre dashboard"
+        description="Vue d'ensemble de votre activité Business Express"
+        steps={[
+          {
+            label: "Consultez vos chiffres en un coup d'œil",
+            description:
+              "Les 4 cartes en haut montrent votre chiffre d'affaires total, votre marge nette, les colis en transit et les commandes en sourcing. Cliquez sur n'importe quelle carte pour voir le détail.",
+          },
+          {
+            label: "Suivez vos tâches urgentes",
+            description:
+              "Les tâches en rouge/orange sont prioritaires aujourd'hui. Cochez-les au fur et à mesure. Elles disparaissent automatiquement une fois terminées.",
+          },
+          {
+            label: "Partagez votre lien de collecte projet",
+            description:
+              "Envoyez ce lien à vos prospects WhatsApp/TikTok. Ils déposent leur projet et vous les retrouvez dans 'Demandes projet'.",
+          },
+          {
+            label: "Vérifiez les nouvelles demandes",
+            description:
+              "Le bandeau bleu en haut apparaît quand de nouveaux projets arrivent. Cliquez pour les traiter.",
+          },
+        ]}
+        tips={[
+          "Marge nette = ce que vous gagnez après avoir payé l'achat et le transport.",
+          "Les données sont mises à jour en temps réel depuis Supabase.",
+          "Utilisez le bouton 'Actualiser' si vous voulez forcer le rafraîchissement.",
+        ]}
+        defaultOpen={false}
+      />
+
+      {/* ============================================================ */}
+      {/* 4 STAT CARDS (cliquables)                                    */}
+      {/* ============================================================ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Chiffre d'affaires"
-          value={formatFCFA(stats.totalRevenue)}
-          icon={Wallet}
-          color="blue"
-          variant="dark"
-          sparklineData={stats.revenueSparkline}
-        />
-        <StatCard
-          label="Marge nette"
-          value={formatFCFA(stats.totalMargin)}
-          icon={TrendingUp}
-          color="green"
-          trend={`${stats.marginRate}% du CA`}
-          sparklineData={stats.marginSparkline}
-        />
-        <StatCard
-          label="En transit"
-          value={`${stats.inTransit} colis`}
-          icon={Package}
-          color="purple"
-        />
-        <StatCard
-          label="En sourcing"
-          value={`${stats.inSourcing} commandes`}
-          icon={AlertCircle}
-          color="amber"
-        />
+        <Link href="/admin/finances" className="block">
+          <StatCard
+            label="Chiffre d'affaires"
+            value={formatFCFA(stats.totalRevenue)}
+            icon={Wallet}
+            color="blue"
+            variant="dark"
+            sparklineData={stats.revenueSparkline}
+          />
+        </Link>
+        <Link href="/admin/finances" className="block">
+          <StatCard
+            label="Marge nette"
+            value={formatFCFA(stats.totalMargin)}
+            icon={TrendingUp}
+            color="green"
+            trend={`${stats.marginRate}% du CA`}
+            sparklineData={stats.marginSparkline}
+          />
+        </Link>
+        <Link href="/admin/commandes?status=freight" className="block">
+          <StatCard
+            label="En transit"
+            value={`${stats.inTransit} colis`}
+            icon={Package}
+            color="purple"
+          />
+        </Link>
+        <Link href="/admin/commandes?status=sourcing" className="block">
+          <StatCard
+            label="En sourcing"
+            value={`${stats.inSourcing} commandes`}
+            icon={AlertCircle}
+            color="amber"
+          />
+        </Link>
       </div>
 
-      {/* Graphique */}
+      {/* ============================================================ */}
+      {/* LIEN DE COLLECTE PROJET                                      */}
+      {/* ============================================================ */}
+      <ShareProjectLink variant="card" />
+
+      {/* ============================================================ */}
+      {/* GRAPHIQUE                                                    */}
+      {/* ============================================================ */}
       <RevenueChart orders={orders} />
 
-      {/* Tâches + Commandes */}
+      {/* ============================================================ */}
+      {/* TÂCHES + COMMANDES RÉCENTES                                  */}
+      {/* ============================================================ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <UrgentTasks tasks={tasks} />
         <RecentOrders orders={orders} />
