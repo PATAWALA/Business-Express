@@ -10,6 +10,7 @@ import {
   MapPin,
   Package,
   TrendingUp,
+  Trash2,
 } from "lucide-react";
 import { type Order, type Client, updateOrder } from "@/lib/order-client";
 import { formatAED, formatFCFA, formatDate } from "@/lib/admin-utils";
@@ -30,6 +31,7 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
   const [supplierCity, setSupplierCity] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (order) {
@@ -42,7 +44,6 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
     }
   }, [order]);
 
-  // ✅ CORRECTION : capture locale après le null check
   if (!order) return null;
   const currentOrder = order;
 
@@ -72,6 +73,29 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
     }
   }
 
+  async function handleDelete() {
+    if (currentOrder.status === "delivered") {
+      alert("Impossible de supprimer une commande livrée.");
+      return;
+    }
+    if (!confirm(`Supprimer définitivement ${currentOrder.order_ref} ?`)) return;
+
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/orders/${currentOrder.id}/delete`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur");
+      onSaved();
+      onClose();
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   const whatsappLink = currentOrder.clients?.whatsapp
     ? `https://wa.me/${currentOrder.clients.whatsapp.replace(/\D/g, "")}`
     : null;
@@ -85,7 +109,6 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
         className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-start justify-between p-5 border-b border-slate-200">
           <div>
             <div className="flex items-center gap-2">
@@ -98,17 +121,30 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
               Créée le {formatDate(currentOrder.created_at)}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+              aria-label="Supprimer"
+              title="Supprimer la commande"
+            >
+              {deleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+            </button>
+            <button
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Body */}
         <div className="p-5 overflow-y-auto flex-1 space-y-5">
-          {/* Client */}
           {currentOrder.clients && (
             <div className="rounded-xl border border-slate-200 p-4">
               <div className="text-xs uppercase font-semibold text-slate-500 mb-2">
@@ -135,7 +171,6 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
             </div>
           )}
 
-          {/* Marchandise */}
           <div className="rounded-xl border border-slate-200 p-4">
             <div className="text-xs uppercase font-semibold text-slate-500 mb-2 flex items-center gap-1">
               <Package className="h-3.5 w-3.5" />
@@ -149,7 +184,6 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
             </div>
           </div>
 
-          {/* Fournisseur + prix */}
           <div className="rounded-xl border border-slate-200 p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="text-xs uppercase font-semibold text-slate-500">
@@ -253,7 +287,6 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
             )}
           </div>
 
-          {/* Finance */}
           <div className="rounded-xl border border-green-200 bg-green-50 p-4">
             <div className="text-xs uppercase font-semibold text-green-700 mb-2 flex items-center gap-1">
               <TrendingUp className="h-3.5 w-3.5" />
@@ -276,7 +309,6 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
             </div>
           </div>
 
-          {/* Livraison */}
           {currentOrder.expected_delivery && (
             <div className="rounded-xl border border-slate-200 p-4">
               <div className="text-xs uppercase font-semibold text-slate-500 mb-1">

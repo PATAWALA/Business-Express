@@ -2,16 +2,18 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   ShoppingBag,
   Users,
   Wallet,
   CheckSquare,
-  LogOut,
+  Settings,
+  X,
+  ChevronLeft,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/admin", label: "Vue d'ensemble", icon: LayoutDashboard },
@@ -19,66 +21,126 @@ const navItems = [
   { href: "/admin/clients", label: "Clients", icon: Users },
   { href: "/admin/finances", label: "Finances", icon: Wallet },
   { href: "/admin/taches", label: "Tâches", icon: CheckSquare },
+  { href: "/admin/parametres", label: "Paramètres", icon: Settings },
 ];
 
-export function AdminSidebar({ userEmail }: { userEmail: string }) {
-  const pathname = usePathname();
-  const router = useRouter();
+interface Props {
+  collapsed: boolean;
+  mobileOpen: boolean;
+  onToggleCollapse: () => void;
+  onCloseMobile: () => void;
+}
 
-  async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
+export function AdminSidebar({
+  collapsed,
+  mobileOpen,
+  onToggleCollapse,
+  onCloseMobile,
+}: Props) {
+  const pathname = usePathname();
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 bg-slate-900 text-white min-h-screen fixed left-0 top-0 p-5">
-      <div className="flex items-center gap-3 mb-10 px-2">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 font-bold">
-          BE
-        </div>
-        <div>
-          <div className="text-sm font-bold">BUSINESS</div>
-          <div className="text-sm font-bold text-blue-400">EXPRESS</div>
-        </div>
-      </div>
+    <>
+      {/* Overlay mobile */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden"
+          onClick={onCloseMobile}
+        />
+      )}
 
-      <nav className="flex-1 space-y-1">
-        {navItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/admin" && pathname.startsWith(item.href));
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
-              }`}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="mt-auto pt-5 border-t border-slate-700 space-y-2">
-        <div className="px-3 py-2">
-          <div className="text-xs text-slate-400">Connecté en tant que</div>
-          <div className="text-sm font-semibold truncate">{userEmail}</div>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed top-0 left-0 h-screen bg-slate-900 text-white flex flex-col transition-all duration-300 z-50",
+          // Desktop
+          "lg:translate-x-0",
+          collapsed ? "lg:w-20" : "lg:w-64",
+          // Mobile
+          "w-64",
+          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
+        {/* Header sidebar */}
+        <div
+          className={cn(
+            "flex items-center h-16 border-b border-slate-800",
+            collapsed ? "justify-center px-2" : "justify-between px-4"
+          )}
         >
-          <LogOut className="h-4 w-4" />
-          Déconnexion
-        </button>
-      </div>
-    </aside>
+          <Link href="/admin" className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 font-bold text-sm shrink-0">
+              BE
+            </div>
+            {!collapsed && (
+              <div className="flex flex-col leading-none">
+                <div className="text-xs font-bold">BUSINESS</div>
+                <div className="text-xs font-bold text-blue-400">EXPRESS</div>
+              </div>
+            )}
+          </Link>
+
+          {/* Bouton fermer sur mobile */}
+          <button
+            onClick={onCloseMobile}
+            className="lg:hidden flex h-8 w-8 items-center justify-center rounded-lg hover:bg-slate-800"
+            aria-label="Fermer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          {/* Bouton collapse sur desktop */}
+          {!collapsed && (
+            <button
+              onClick={onToggleCollapse}
+              className="hidden lg:flex h-8 w-8 items-center justify-center rounded-lg hover:bg-slate-800"
+              aria-label="Réduire"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+          {navItems.map((item) => {
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/admin" && pathname.startsWith(item.href));
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onCloseMobile}
+                title={collapsed ? item.label : undefined}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  collapsed ? "justify-center" : "",
+                  isActive
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                )}
+              >
+                <item.icon className="h-5 w-5 shrink-0" />
+                {!collapsed && <span>{item.label}</span>}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Footer - bouton expand si collapsed */}
+        {collapsed && (
+          <div className="p-3 border-t border-slate-800">
+            <button
+              onClick={onToggleCollapse}
+              className="w-full flex items-center justify-center h-10 rounded-lg hover:bg-slate-800 text-slate-400"
+              aria-label="Étendre"
+            >
+              <ChevronLeft className="h-4 w-4 rotate-180" />
+            </button>
+          </div>
+        )}
+      </aside>
+    </>
   );
 }
