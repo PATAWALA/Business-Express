@@ -157,39 +157,38 @@ export function OrdersTable({ initialOrders }: Props) {
 
       <div className="mb-4">
         <PageHelp
-          title="💡 Comment gérer vos commandes"
-          description="Suivez chaque commande du sourcing à la livraison"
+          title="📦 Gérez vos importations de A à Z"
+          description="De l'achat à Dubaï jusqu'à la livraison au client"
           steps={[
             {
-              label: "Créez une commande",
+              label: "1. Enregistrez la commande",
               description:
-                "Cliquez sur '+ Nouvelle commande' ou envoyez le lien d'enregistrement à un client qui a validé.",
+                "Soit en cliquant sur '+ Nouvelle commande' si le client est devant vous, soit en lui envoyant votre lien de commande pour qu'il le fasse lui-même.",
             },
             {
-              label: "Remplissez les 3 étapes",
+              label: "2. Remplissez les coûts",
               description:
-                "Étape 1 : Client + Article. Étape 2 : Fournisseur + Prix d'achat (facultatif). Étape 3 : Prix de vente + Livraison.",
+                "Indiquez le prix d'achat chez le fournisseur et les frais de transport. Le système calcule automatiquement votre bénéfice (marge).",
             },
             {
-              label: "Suivez le statut",
+              label: "3. Suivez l'avancée",
               description:
-                "🟡 Sourcing → 🔵 Acheté → 🟣 En fret → 🟢 Livré. Cliquez sur le badge pour changer d'étape.",
+                "Cliquez sur le badge de statut pour faire avancer la commande : Sourcing (recherche) → Acheté → En fret (transport) → Livré.",
             },
             {
-              label: "Complétez les prix plus tard",
+              label: "4. Complétez plus tard",
               description:
-                "Si vous ne connaissez pas encore le prix d'achat, laissez vide. Ouvrez la commande plus tard pour le remplir. La marge se calcule automatiquement.",
+                "Vous ne connaissez pas encore le prix d'achat exact ? Laissez vide. Ouvrez la commande plus tard pour le remplir.",
             },
           ]}
           tips={[
-            "Utilisez la barre de recherche pour retrouver une commande (par réf, client ou article).",
-            "Les filtres par statut vous permettent de voir uniquement les colis en transit.",
-            "Cliquez sur une ligne pour ouvrir le détail et modifier.",
+            "Tapez le nom d'un client dans la barre de recherche pour retrouver toutes ses commandes d'un coup.",
+            "Les filtres en haut (Sourcing, Acheté, etc.) vous aident à voir ce qui est en route.",
+            "Cliquez sur n'importe quelle ligne pour voir les détails ou modifier.",
           ]}
         />
       </div>
 
-      {/* Lien de commande pour les clients */}
       <div className="mb-4">
         <ShareOrderLink />
       </div>

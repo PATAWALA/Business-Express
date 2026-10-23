@@ -90,42 +90,35 @@ export function TasksClient({ tasks }: Props) {
         }
       />
 
-      {/* Encart pédagogique */}
       <div className="mb-4">
         <PageHelp
-          title="💡 Comment gérer vos tâches"
-          description="Votre mémoire externe : ne rien oublier, jamais"
+          title="✅ Ne perdez plus le fil"
+          description="Votre carnet de notes intelligent pour ne rien oublier à Dubaï."
           steps={[
             {
-              label: "Créez une tâche",
+              label: "1. Ajoutez vos tâches",
               description:
-                "Cliquez '+ Nouvelle tâche'. Ajoutez un titre, une priorité et une échéance si nécessaire.",
+                "Cliquez sur '+ Nouvelle tâche' pour noter tout ce que vous devez faire (ex: payer le fournisseur, appeler le transporteur).",
             },
             {
-              label: "Cochez quand c'est fait",
+              label: "2. Cochez ce qui est fait",
               description:
-                "Cliquez sur le cercle à gauche pour marquer une tâche comme terminée. Elle glisse automatiquement dans 'Terminées'.",
+                "Cliquez sur le cercle pour barrer une tâche. Elle disparaît de votre vue principale et va dans 'Terminées'.",
             },
             {
-              label: "Les tâches automatiques",
+              label: "3. Laissez le système travailler",
               description:
-                "Quand une commande est créée, le système génère automatiquement 2-3 tâches (appeler client, contacter fournisseur, etc.).",
-            },
-            {
-              label: "Priorisez",
-              description:
-                "🔴 Urgent = à faire aujourd'hui. 🟠 Haute = cette semaine. 🔵 Normale = quand vous pouvez. ⚪ Basse = pas pressé.",
+                "Quand vous créez une commande, le système ajoute automatiquement les tâches importantes (ex: contacter le fournisseur).",
             },
           ]}
           tips={[
-            "Les tâches en retard s'affichent en rouge avec '(en retard)'.",
-            "Les tâches urgentes apparaissent aussi sur votre dashboard pour ne pas les oublier.",
-            "Utilisez les filtres pour voir uniquement une priorité ou un statut.",
+            "Une tâche en rouge = urgent, à faire aujourd'hui. En orange = à faire cette semaine.",
+            "Les tâches les plus urgentes s'affichent aussi sur votre tableau de bord principal.",
+            "Les tâches en retard deviennent rouges pour attirer votre attention.",
           ]}
         />
       </div>
 
-      {/* Recherche */}
       <div className="mb-4">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -148,7 +141,6 @@ export function TasksClient({ tasks }: Props) {
         </div>
       </div>
 
-      {/* Filtres statut */}
       <div className="flex flex-wrap gap-2 mb-3">
         {(
           [
@@ -181,7 +173,6 @@ export function TasksClient({ tasks }: Props) {
         })}
       </div>
 
-      {/* Filtres priorité */}
       <div className="flex flex-wrap gap-2 mb-6">
         {(
           [
@@ -209,7 +200,6 @@ export function TasksClient({ tasks }: Props) {
         })}
       </div>
 
-      {/* Contenu */}
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white">
           <EmptyState

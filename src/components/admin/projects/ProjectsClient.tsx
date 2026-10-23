@@ -68,42 +68,35 @@ export function ProjectsClient({ projects }: Props) {
         subtitle={`${counts.all} demande${counts.all > 1 ? "s" : ""} · ${counts.new} nouvelle${counts.new > 1 ? "s" : ""} à traiter`}
       />
 
-      {/* Encart pédagogique */}
       <div className="mb-4">
         <PageHelp
-          title="💡 Comment traiter vos demandes de projet"
-          description="Ces demandes viennent de votre lien /projet (partagé sur WhatsApp, TikTok, etc.)"
+          title="📥 Vos prospects n'attendent que vous"
+          description="Ces personnes ont déposé un projet sur votre site. À vous de les transformer en clients."
           steps={[
             {
-              label: "Ouvrez une demande",
+              label: "1. Contactez le prospect",
               description:
-                "Cliquez sur une carte pour voir le projet complet (nom, description, budget).",
+                "Cliquez sur 'Contacter sur WhatsApp'. Discutez de son besoin, proposez-lui un prix et un délai.",
             },
             {
-              label: "Contactez le client",
+              label: "2. Mettez le statut à jour",
               description:
-                "Cliquez sur 'Contacter sur WhatsApp' pour démarrer la discussion. Négociez les détails et le prix.",
+                "Une fois le contact fait, passez le statut à '📞 Contacté'. S'il accepte le devis, passez à '💰 Devis envoyé'.",
             },
             {
-              label: "Mettez à jour le statut",
+              label: "3. Envoyez le lien de commande",
               description:
-                "Changez le statut : 🆕 Nouveau → 📞 Contacté → 💰 Devis envoyé. Vous savez toujours où vous en êtes.",
-            },
-            {
-              label: "Envoyez le lien de commande",
-              description:
-                "Quand le client accepte, le bouton 'Envoyer via WhatsApp' apparaît. Le client enregistre sa commande, elle apparaît dans /admin/commandes.",
+                "Dès que le client dit OUI, envoyez-lui le lien de commande. Il enregistre ses infos lui-même et la commande arrive dans votre tableau.",
             },
           ]}
           tips={[
-            "Une demande = un prospect. Une commande = un client qui a payé.",
-            "Partagez votre lien /projet sur TikTok/Instagram dans votre bio pour capter de nouveaux prospects 24h/24.",
-            "Les notes internes sont privées (visibles seulement par vous).",
+            "Un client qui n'a pas encore validé de prix n'est qu'un prospect. C'est normal.",
+            "Partagez votre lien /projet sur TikTok pour avoir plein de prospects ici.",
+            "Utilisez les notes internes pour vous rappeler de quoi vous avez parlé.",
           ]}
         />
       </div>
 
-      {/* Recherche */}
       <div className="mb-4">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -125,7 +118,6 @@ export function ProjectsClient({ projects }: Props) {
         </div>
       </div>
 
-      {/* Filtres */}
       <div className="flex flex-wrap gap-2 mb-6">
         {filters.map((f) => {
           const isActive = filter === f.key;
@@ -152,7 +144,6 @@ export function ProjectsClient({ projects }: Props) {
         })}
       </div>
 
-      {/* Grille */}
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white">
           <EmptyState

@@ -128,42 +128,35 @@ export function FinanceClient({ orders, exchangeRate }: Props) {
         }
       />
 
-      {/* Encart pédagogique */}
       <div className="mb-4">
         <PageHelp
-          title="💡 Comprendre vos chiffres financiers"
-          description="Trésorerie, marges et performances de votre activité"
+          title="💰 Où en est votre argent ?"
+          description="Comprenez en 10 secondes combien vous gagnez avec votre business."
           steps={[
             {
               label: "Chiffre d'affaires",
               description:
-                "C'est la somme totale de tout ce que vous avez VENDU (toutes commandes confondues). Peu importe si le client a payé ou pas encore.",
+                "C'est l'argent TOTAL de toutes vos ventes. Si vous vendez 10 téléphones à 1 million, ça fait 10 millions.",
             },
             {
-              label: "Marge nette",
+              label: "Marge nette (Votre bénéfice)",
               description:
-                "C'est votre VRAI bénéfice = (Prix de vente) - (Prix d'achat + Transport) × Taux de change. C'est ce que vous gagnez réellement.",
+                "C'est ce qui vous reste dans la poche après avoir payé l'achat chez le fournisseur et le transport. C'est VOTRE argent.",
             },
             {
               label: "Argent engagé",
               description:
-                "C'est l'argent que vous avez déjà dépensé chez le fournisseur et pour le transport (en AED). Argent sorti de votre poche.",
-            },
-            {
-              label: "Filtres par période",
-              description:
-                "Choisissez 'Tout', '30 derniers jours' ou '90 derniers jours' pour voir vos performances sur une période précise.",
+                "C'est l'argent que vous avez déjà dépensé à Dubaï pour acheter la marchandise (et qui va vous rapporter plus tard).",
             },
           ]}
           tips={[
-            "Une marge négative = vous vendez à perte. Vérifiez le prix d'achat.",
-            "Le taux de change AED → FCFA se modifie dans /admin/parametres.",
-            "Exportez en CSV pour analyser dans Excel.",
+            "Changez la période (30 jours, 90 jours) pour voir si vous vendez plus ce mois-ci que le mois dernier.",
+            "Si votre marge est négative (en rouge), c'est que vous vendez à perte. Vérifiez vite votre prix d'achat !",
+            "Téléchargez le tableau (Export CSV) pour l'envoyer à votre comptable.",
           ]}
         />
       </div>
 
-      {/* Période */}
       <div className="flex flex-wrap gap-2 mb-6">
         {(
           [
@@ -190,7 +183,6 @@ export function FinanceClient({ orders, exchangeRate }: Props) {
         })}
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <StatCard
           label="Chiffre d'affaires"
@@ -216,7 +208,6 @@ export function FinanceClient({ orders, exchangeRate }: Props) {
         />
       </div>
 
-      {/* Graphique + Table */}
       <div className="grid lg:grid-cols-3 gap-6 mb-6">
         <StatusPieChart orders={filtered} />
 
