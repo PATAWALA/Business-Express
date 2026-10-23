@@ -20,6 +20,7 @@ import { PageHelp } from "@/components/admin/ui/PageHelp";
 import { Button } from "@/components/admin/ui/Button";
 import { Avatar } from "@/components/admin/ui/Avatar";
 import { EmptyState } from "@/components/admin/ui/EmptyState";
+import { ShareOrderLink } from "@/components/admin/shared/ShareOrderLink";
 import { OrdersFilters } from "./OrdersFilters";
 import { StatusDropdown } from "./StatusDropdown";
 import { NewOrderModal } from "./NewOrderModal";
@@ -43,7 +44,6 @@ export function OrdersTable({ initialOrders }: Props) {
   const [newOpen, setNewOpen] = useState(false);
   const [detailOrder, setDetailOrder] = useState<OrderWithClient | null>(null);
 
-  // Lecture du filtre depuis l'URL (?status=freight)
   const initialFilter = (searchParams.get("status") as FilterKey) || "all";
 
   const [search, setSearch] = useState("");
@@ -52,7 +52,6 @@ export function OrdersTable({ initialOrders }: Props) {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
 
-  // Sync si l'URL change
   useEffect(() => {
     const urlFilter = (searchParams.get("status") as FilterKey) || "all";
     setFilter(urlFilter);
@@ -74,10 +73,7 @@ export function OrdersTable({ initialOrders }: Props) {
     const q = search.trim().toLowerCase();
     let list = orders;
 
-    if (filter !== "all") {
-      list = list.filter((o) => o.status === filter);
-    }
-
+    if (filter !== "all") list = list.filter((o) => o.status === filter);
     if (q) {
       list = list.filter(
         (o) =>
@@ -159,7 +155,6 @@ export function OrdersTable({ initialOrders }: Props) {
         }
       />
 
-      {/* Encart pédagogique */}
       <div className="mb-4">
         <PageHelp
           title="💡 Comment gérer vos commandes"
@@ -168,7 +163,7 @@ export function OrdersTable({ initialOrders }: Props) {
             {
               label: "Créez une commande",
               description:
-                "Cliquez sur '+ Nouvelle commande'. Vous pouvez aussi recevoir des commandes automatiques via le lien /commander.",
+                "Cliquez sur '+ Nouvelle commande' ou envoyez le lien d'enregistrement à un client qui a validé.",
             },
             {
               label: "Remplissez les 3 étapes",
@@ -194,6 +189,11 @@ export function OrdersTable({ initialOrders }: Props) {
         />
       </div>
 
+      {/* Lien de commande pour les clients */}
+      <div className="mb-4">
+        <ShareOrderLink />
+      </div>
+
       <OrdersFilters
         search={search}
         onSearchChange={(v) => {
@@ -212,7 +212,9 @@ export function OrdersTable({ initialOrders }: Props) {
         {filtered.length === 0 ? (
           <EmptyState
             icon={Package}
-            title={search || filter !== "all" ? "Aucun résultat" : "Aucune commande"}
+            title={
+              search || filter !== "all" ? "Aucun résultat" : "Aucune commande"
+            }
             description={
               search || filter !== "all"
                 ? "Essayez d'ajuster votre recherche ou vos filtres."
@@ -229,7 +231,7 @@ export function OrdersTable({ initialOrders }: Props) {
           />
         ) : (
           <>
-            {/* Desktop */}
+            {/* Version Desktop */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 border-b border-slate-200">
@@ -271,7 +273,10 @@ export function OrdersTable({ initialOrders }: Props) {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <Avatar name={order.clients?.name ?? "?"} size="sm" />
+                          <Avatar
+                            name={order.clients?.name ?? "?"}
+                            size="sm"
+                          />
                           <span className="text-slate-700 text-sm">
                             {order.clients?.name ?? "—"}
                           </span>
@@ -305,7 +310,7 @@ export function OrdersTable({ initialOrders }: Props) {
               </table>
             </div>
 
-            {/* Mobile */}
+            {/* Version Mobile */}
             <div className="md:hidden divide-y divide-slate-100">
               {paginated.map((order) => (
                 <div
@@ -352,7 +357,9 @@ export function OrdersTable({ initialOrders }: Props) {
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50">
                 <div className="text-xs text-slate-500">
-                  {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filtered.length)} sur {filtered.length}
+                  {pageStart + 1}–
+                  {Math.min(pageStart + PAGE_SIZE, filtered.length)} sur{" "}
+                  {filtered.length}
                 </div>
                 <div className="flex items-center gap-1">
                   <button
