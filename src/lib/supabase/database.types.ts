@@ -66,6 +66,9 @@ export type Database = {
           margin_fcfa: number | null
           status: "sourcing" | "purchased" | "freight" | "delivered"
           expected_delivery: string | null
+          source: "public" | "whatsapp" | "manual"
+          source_detail: string | null
+          exchange_rate_aed_to_fcfa: number
           created_at: string | null
           updated_at: string | null
         }
@@ -83,6 +86,9 @@ export type Database = {
           margin_fcfa?: number | null
           status?: "sourcing" | "purchased" | "freight" | "delivered"
           expected_delivery?: string | null
+          source?: "public" | "whatsapp" | "manual"
+          source_detail?: string | null
+          exchange_rate_aed_to_fcfa?: number
           created_at?: string | null
           updated_at?: string | null
         }
@@ -100,6 +106,9 @@ export type Database = {
           margin_fcfa?: number | null
           status?: "sourcing" | "purchased" | "freight" | "delivered"
           expected_delivery?: string | null
+          source?: "public" | "whatsapp" | "manual"
+          source_detail?: string | null
+          exchange_rate_aed_to_fcfa?: number
           created_at?: string | null
           updated_at?: string | null
         }
@@ -112,6 +121,54 @@ export type Database = {
             referencedColumns: ["id"]
           }
         ]
+      }
+      settings: {
+        Row: {
+          id: number
+          exchange_rate_aed_to_fcfa: number
+          updated_at: string | null
+        }
+        Insert: {
+          id?: number
+          exchange_rate_aed_to_fcfa?: number
+          updated_at?: string | null
+        }
+        Update: {
+          id?: number
+          exchange_rate_aed_to_fcfa?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          id: string
+          title: string
+          description: string | null
+          priority: "low" | "normal" | "high" | "urgent"
+          due_date: string | null
+          completed: boolean | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          title: string
+          description?: string | null
+          priority?: "low" | "normal" | "high" | "urgent"
+          due_date?: string | null
+          completed?: boolean | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string | null
+          priority?: "low" | "normal" | "high" | "urgent"
+          due_date?: string | null
+          completed?: boolean | null
+          created_at?: string | null
+        }
+        Relationships: []
       }
       transactions: {
         Row: {
@@ -150,36 +207,6 @@ export type Database = {
             referencedColumns: ["id"]
           }
         ]
-      }
-      tasks: {
-        Row: {
-          id: string
-          title: string
-          description: string | null
-          priority: "low" | "normal" | "high" | "urgent"
-          due_date: string | null
-          completed: boolean | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          title: string
-          description?: string | null
-          priority?: "low" | "normal" | "high" | "urgent"
-          due_date?: string | null
-          completed?: boolean | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          title?: string
-          description?: string | null
-          priority?: "low" | "normal" | "high" | "urgent"
-          due_date?: string | null
-          completed?: boolean | null
-          created_at?: string | null
-        }
-        Relationships: []
       }
     }
     Views: {
