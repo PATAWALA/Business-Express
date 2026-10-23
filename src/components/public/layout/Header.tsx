@@ -41,7 +41,7 @@ export function Header() {
             {/* Logo + statut */}
             <Link href="/" className="flex items-center gap-3">
               <Image
-                src="/logo.png"
+                src="/logo.jpeg"
                 alt="Business Express"
                 width={52}
                 height={52}

@@ -7,7 +7,7 @@ import {
   FaWhatsapp,
   FaEnvelope,
 } from "react-icons/fa";
-import { Rocket } from "lucide-react";
+import { Rocket, Lock } from "lucide-react";
 
 export function Footer() {
   return (
@@ -17,7 +17,7 @@ export function Footer() {
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-4">
               <Image
-                src="/logo.png"
+                src="/logo.jpeg"
                 alt="Business Express"
                 width={44}
                 height={44}
@@ -127,15 +127,22 @@ export function Footer() {
           </div>
         </div>
 
+        {/* Ligne du bas avec lien discret vers login admin */}
         <div className="mt-12 border-t border-[#0F172A]/8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-[#0F172A]/50">
-            © {new Date().getFullYear()} Business Express. Tous droits réservés.
-          </p>
+          <Link
+            href="/login"
+            title="Accéder à l'espace administration"
+            className="group text-xs text-[#0F172A]/50 hover:text-[#0F172A] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            <Lock className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <span>© {new Date().getFullYear()} Business Express. Tous droits réservés.</span>
+          </Link>
+
           <div className="flex items-center gap-5 text-xs text-[#0F172A]/50">
-            <Link href="#" className="hover:text-[#0F172A]">
+            <Link href="#" className="hover:text-[#0F172A] transition-colors">
               Mentions légales
             </Link>
-            <Link href="#" className="hover:text-[#0F172A]">
+            <Link href="#" className="hover:text-[#0F172A] transition-colors">
               Confidentialité
             </Link>
           </div>
