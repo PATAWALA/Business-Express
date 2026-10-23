@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Menu, MessageSquare } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/public/ui/Button";
 import { MobileNav } from "./MobileNav";
-import { buildWhatsAppLink, cn } from "@/lib/utils";
+import { buildWhatsAppLink } from "@/lib/public-utils";
+import { cn } from "@/lib/utils";
 
 const navLinks = [
   { label: "Services", href: "#services" },
@@ -38,10 +39,9 @@ export function Header() {
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-20 items-center justify-between py-3">
-            {/* Logo + statut */}
             <Link href="/" className="flex items-center gap-3">
               <Image
-                src="/logo.jpeg"
+                src="/logo.png"
                 alt="Business Express"
                 width={52}
                 height={52}
@@ -62,7 +62,6 @@ export function Header() {
               </div>
             </Link>
 
-            {/* Navigation desktop */}
             <nav className="hidden lg:flex items-center gap-8">
               {navLinks.map((l) => (
                 <Link
@@ -94,7 +93,6 @@ export function Header() {
               </a>
             </div>
 
-            {/* Toggle mobile */}
             <button
               onClick={() => setOpen(true)}
               className="lg:hidden flex h-10 w-10 items-center justify-center rounded-full border border-[#0F172A]/10 bg-white"

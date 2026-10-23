@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { services } from "@/data/services";
-import { Card } from "@/components/ui/Card";
+import { Card } from "@/components/public/ui/Card";
 import { cn } from "@/lib/utils";
 
 const accentClasses = {

@@ -3,8 +3,8 @@
 import { X, MessageSquare } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
-import { buildWhatsAppLink } from "@/lib/utils";
+import { Button } from "@/components/public/ui/Button";
+import { buildWhatsAppLink } from "@/lib/public-utils";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface Props {
@@ -35,7 +35,7 @@ export function MobileNav({ open, onClose, links }: Props) {
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2">
                 <Image
-                  src="/logo.jpeg"
+                  src="/logo.png"
                   alt="Business Express"
                   width={36}
                   height={36}

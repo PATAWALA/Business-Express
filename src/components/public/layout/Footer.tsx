@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { FaInstagram, FaTiktok, FaWhatsapp, FaEnvelope } from "react-icons/fa";
-import { buildWhatsAppLink } from "@/lib/utils";
+import { buildWhatsAppLink } from "@/lib/public-utils";
 
 export function Footer() {
   return (
@@ -11,7 +11,7 @@ export function Footer() {
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-4">
               <Image
-                src="/logo.jpeg"
+                src="/logo.png"
                 alt="Business Express"
                 width={44}
                 height={44}
@@ -26,7 +26,6 @@ export function Footer() {
               logistique sécurisée et accompagnement VIP.
             </p>
 
-            {/* Réseaux sociaux avec react-icons */}
             <div className="mt-5 flex items-center gap-3">
               <a
                 href={buildWhatsAppLink("Bonjour Business Express !")}

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { products, categories } from "@/data/products";
-import { Badge } from "@/components/ui/Badge";
+import { Badge } from "@/components/public/ui/Badge";
 import { cn } from "@/lib/utils";
 
 export function DubaiCatalog() {

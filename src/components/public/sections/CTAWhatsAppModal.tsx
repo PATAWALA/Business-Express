@@ -1,8 +1,8 @@
 "use client";
 
 import { MessageSquare, MapPin, Mail, Phone } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { buildWhatsAppLink } from "@/lib/utils";
+import { Button } from "@/components/public/ui/Button";
+import { buildWhatsAppLink } from "@/lib/public-utils";
 
 export function CTAWhatsAppModal() {
   return (

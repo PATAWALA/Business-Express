@@ -12,8 +12,9 @@ import {
   MapPin,
   CheckCircle2,
 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { cn, buildWhatsAppLink, WHATSAPP_AGENT } from "@/lib/utils";
+import { Button } from "@/components/public/ui/Button";
+import { cn } from "@/lib/utils";
+import { buildWhatsAppLink, WHATSAPP_AGENT } from "@/lib/public-utils";
 
 type ServiceType = "sourcing" | "colis" | "voyage";
 

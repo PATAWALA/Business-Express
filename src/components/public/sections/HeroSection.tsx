@@ -10,9 +10,9 @@ import {
   Package,
   TrendingUp,
 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
-import { buildWhatsAppLink } from "@/lib/utils";
+import { Button } from "@/components/public/ui/Button";
+import { Badge } from "@/components/public/ui/Badge";
+import { buildWhatsAppLink } from "@/lib/public-utils";
 
 export function HeroSection() {
   return (
