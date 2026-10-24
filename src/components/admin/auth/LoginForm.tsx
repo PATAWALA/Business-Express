@@ -1,14 +1,19 @@
 // src/components/admin/auth/LoginForm.tsx
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Lock, Mail, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-export function LoginForm() {
+function LoginFormInner() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const searchParams = useSearchParams();
+  
+  // ✅ Récupère l'email depuis l'URL (envoyé par le QR Code)
+  const emailFromUrl = searchParams.get("email") || "";
+  
+  const [email, setEmail] = useState(emailFromUrl);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +46,7 @@ export function LoginForm() {
     >
       {/* Logo */}
       <div className="flex flex-col items-center mb-8">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white font-bold text-lg mb-4">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white font-bold text-lg mb-4 shadow-lg shadow-blue-500/30">
           BE
         </div>
         <h1 className="text-xl font-bold text-slate-900">Business Express</h1>
@@ -108,8 +113,17 @@ export function LoginForm() {
       </button>
 
       <p className="text-xs text-slate-500 text-center mt-6">
-        Accès réservé à l&apos;administration Business Express.
+        Accès réservé à l'administration Business Express.
       </p>
     </form>
+  );
+}
+
+// ✅ On l'exporte avec un Suspense autour, obligatoire pour useSearchParams
+export function LoginForm() {
+  return (
+    <Suspense fallback={<div className="text-slate-500 text-sm">Chargement du formulaire...</div>}>
+      <LoginFormInner />
+    </Suspense>
   );
 }

@@ -5,13 +5,15 @@ import { PageHeader } from "@/components/admin/ui/PageHeader";
 import { ExchangeRateSection } from "./ExchangeRateSection";
 import { CompanyInfoSection } from "./CompanyInfoSection";
 import { SystemPreferencesSection } from "./SystemPreferencesSection";
+import { QRCodeSection } from "./QRCodeSection"; // ✅ Import ajouté
 import type { Settings } from "@/lib/order-client";
 
 interface Props {
   settings: Settings;
+  userEmail: string; // ✅ Ajouté
 }
 
-export function SettingsClient({ settings }: Props) {
+export function SettingsClient({ settings, userEmail }: Props) {
   return (
     <div>
       <PageHeader
@@ -20,6 +22,9 @@ export function SettingsClient({ settings }: Props) {
       />
 
       <div className="space-y-6 max-w-4xl">
+        {/* NOUVELLE SECTION QR CODE */}
+        <QRCodeSection userEmail={userEmail} />
+
         <ExchangeRateSection settings={settings} />
         <CompanyInfoSection settings={settings} />
         <SystemPreferencesSection settings={settings} />
@@ -41,10 +46,6 @@ export function SettingsClient({ settings }: Props) {
             <li className="flex items-center gap-2">
               <span className="text-blue-500">→</span>
               Intégration WhatsApp Business API
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-blue-500">→</span>
-              Export automatique des données (backup)
             </li>
           </ul>
         </div>
