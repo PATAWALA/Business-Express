@@ -25,19 +25,12 @@ import { RecentOrders } from "./RecentOrders";
 
 type OrderWithClient = Order & { clients: Client | null };
 
-interface ProjectMinimal {
-  id: string;
-  status: "new" | "contacted" | "quoted" | "converted" | "archived";
-  created_at: string | null;
-}
-
 interface Props {
   orders: OrderWithClient[];
   tasks: Task[];
-  projects: ProjectMinimal[];
 }
 
-export function DashboardClient({ orders, tasks, projects }: Props) {
+export function DashboardClient({ orders, tasks }: Props) {
   const router = useRouter();
 
   const stats = useMemo(() => {
@@ -94,20 +87,12 @@ export function DashboardClient({ orders, tasks, projects }: Props) {
 
   const pendingTasksCount = tasks.filter((t) => !t.completed).length;
 
-  // ✅ Compte les projets "new" récents (24h), pas les commandes
-  const newProjectsCount = projects.filter((p) => {
-    if (!p.created_at) return false;
-    return (
-      p.status === "new" &&
-      Date.now() - new Date(p.created_at).getTime() < 24 * 3600000
-    );
-  }).length;
+  // ✅ Compte les commandes récentes avec le statut "new"
+  const newProjectsCount = orders.filter((o) => o.status === "new").length;
 
   return (
     <div className="space-y-6">
-      {/* ============================================================ */}
-      {/* HEADER                                                       */}
-      {/* ============================================================ */}
+      {/* HEADER */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1 capitalize">
@@ -141,12 +126,10 @@ export function DashboardClient({ orders, tasks, projects }: Props) {
         </div>
       </div>
 
-      {/* ============================================================ */}
-      {/* ALERTE : Nouveaux projets (conditionnel)                     */}
-      {/* ============================================================ */}
+      {/* ALERTE : Nouveaux projets */}
       {newProjectsCount > 0 && (
         <Link
-          href="/admin/projets"
+          href="/admin/commandes?status=new"
           className="flex items-center gap-3 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 hover:shadow-md transition-shadow"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shrink-0 animate-pulse text-lg">
@@ -154,21 +137,17 @@ export function DashboardClient({ orders, tasks, projects }: Props) {
           </div>
           <div className="flex-1">
             <div className="text-sm font-bold text-blue-900">
-              {newProjectsCount} nouveau{newProjectsCount > 1 ? "x" : ""} projet
-              {newProjectsCount > 1 ? "s" : ""} reçu
-              {newProjectsCount > 1 ? "s" : ""} dans les dernières 24h
+              {newProjectsCount} nouvelle{newProjectsCount > 1 ? "s" : ""} demande{newProjectsCount > 1 ? "s" : ""} à traiter
             </div>
             <div className="text-xs text-blue-700">
-              Cliquez pour voir les prospects
+              Cliquez pour voir les commandes
             </div>
           </div>
           <ArrowRight className="h-5 w-5 text-blue-600" />
         </Link>
       )}
 
-      {/* ============================================================ */}
-      {/* ENCART AIDE                                                  */}
-      {/* ============================================================ */}
+      {/* ENCART AIDE */}
       <PageHelp
         title="💡 Comment utiliser votre dashboard"
         description="Vue d'ensemble de votre activité Business Express"
@@ -176,22 +155,22 @@ export function DashboardClient({ orders, tasks, projects }: Props) {
           {
             label: "Consultez vos chiffres en un coup d'œil",
             description:
-              "Les 4 cartes en haut montrent votre chiffre d'affaires total, votre marge nette, les colis en transit et les commandes en sourcing. Cliquez sur n'importe quelle carte pour voir le détail.",
+              "Les 4 cartes en haut montrent votre chiffre d'affaires total, votre marge nette, les colis en transit et les commandes en sourcing.",
           },
           {
             label: "Suivez vos tâches urgentes",
             description:
-              "Les tâches en rouge/orange sont prioritaires aujourd'hui. Cochez-les au fur et à mesure. Elles disparaissent automatiquement une fois terminées.",
+              "Les tâches en rouge/orange sont prioritaires aujourd'hui. Cochez-les au fur et à mesure.",
           },
           {
             label: "Partagez votre lien de collecte projet",
             description:
-              "Envoyez ce lien à vos prospects WhatsApp/TikTok. Ils déposent leur projet et vous les retrouvez dans 'Demandes projet'.",
+              "Envoyez ce lien à vos prospects WhatsApp/TikTok. Ils déposent leur projet et vous les retrouvez dans 'Commandes'.",
           },
           {
             label: "Vérifiez les nouvelles demandes",
             description:
-              "Le bandeau bleu en haut apparaît quand de nouveaux projets arrivent. Cliquez pour les traiter.",
+              "Le bandeau bleu en haut apparaît quand de nouvelles commandes arrivent. Cliquez pour les traiter.",
           },
         ]}
         tips={[
@@ -202,9 +181,7 @@ export function DashboardClient({ orders, tasks, projects }: Props) {
         defaultOpen={false}
       />
 
-      {/* ============================================================ */}
-      {/* 4 STAT CARDS (cliquables)                                    */}
-      {/* ============================================================ */}
+      {/* 4 STAT CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link href="/admin/finances" className="block">
           <StatCard
@@ -244,19 +221,13 @@ export function DashboardClient({ orders, tasks, projects }: Props) {
         </Link>
       </div>
 
-      {/* ============================================================ */}
-      {/* LIEN DE COLLECTE PROJET                                      */}
-      {/* ============================================================ */}
+      {/* LIEN DE COLLECTE PROJET */}
       <ShareProjectLink variant="card" />
 
-      {/* ============================================================ */}
-      {/* GRAPHIQUE                                                    */}
-      {/* ============================================================ */}
+      {/* GRAPHIQUE */}
       <RevenueChart orders={orders} />
 
-      {/* ============================================================ */}
-      {/* TÂCHES + COMMANDES RÉCENTES                                  */}
-      {/* ============================================================ */}
+      {/* TÂCHES + COMMANDES */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <UrgentTasks tasks={tasks} />
         <RecentOrders orders={orders} />
