@@ -12,7 +12,7 @@ type OrderWithClient = Order & { clients: Client | null };
 
 interface Props {
   order: OrderWithClient;
-  usdRate: number; // ✅ Ajouté
+  usdRate: number;
   isLoading: boolean;
   onAdvanceStatus: () => void;
   onOpenDetails: () => void;
@@ -23,11 +23,9 @@ export function OrderCard({ order, usdRate, isLoading, onAdvanceStatus, onOpenDe
   const hasPrice = !!order.sale_price_fcfa && order.sale_price_fcfa > 0;
   const isNegativeMargin = hasPrice && (order.margin_fcfa ?? 0) < 0;
 
-  // Conversion en Dollars
   const priceUsd = hasPrice ? Math.round((order.sale_price_fcfa ?? 0) / usdRate) : 0;
   const marginUsd = hasPrice ? Math.round((order.margin_fcfa ?? 0) / usdRate) : 0;
 
-  // Configuration du bouton
   let actionLabel = "Gérer";
   let actionIcon = ArrowRight;
   let actionColor = "bg-blue-600 text-white hover:bg-blue-700";
