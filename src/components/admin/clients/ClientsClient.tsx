@@ -7,7 +7,6 @@ import { Search, Users, X, UserCheck, UserX } from "lucide-react";
 import type { Client } from "@/lib/order-client";
 import { PageHeader } from "@/components/admin/ui/PageHeader";
 import { EmptyState } from "@/components/admin/ui/EmptyState";
-import { ShareProjectLink } from "@/components/admin/shared/ShareProjectLink";
 import { NewClientButton } from "./NewClientButton";
 import { ClientCard } from "./ClientCard";
 import { ClientDetailModal } from "./ClientDetailModal";
@@ -15,7 +14,7 @@ import { useToast } from "@/components/admin/ui/ToastProvider";
 
 interface Props {
   clients: Client[];
-  usdRate: number; // ✅ Ajouté
+  usdRate: number;
 }
 
 type FilterKey = "all" | "client" | "prospect";
@@ -65,10 +64,6 @@ export function ClientsClient({ clients, usdRate }: Props) {
         action={<NewClientButton />} 
       />
 
-      <div className="mb-6">
-        <ShareProjectLink variant="card" />
-      </div>
-
       <div className="mb-4">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -111,12 +106,7 @@ export function ClientsClient({ clients, usdRate }: Props) {
         </div>
       )}
 
-      <ClientDetailModal 
-        clientId={selectedId} 
-        onClose={() => setSelectedId(null)} 
-        onRefresh={() => {}} 
-        usdRate={usdRate} // ✅ Ajouté ici
-      />
+      <ClientDetailModal clientId={selectedId} onClose={() => setSelectedId(null)} onRefresh={() => {}} usdRate={usdRate} />
     </div>
   );
 }

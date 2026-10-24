@@ -115,15 +115,8 @@ export function OrdersTable({ initialOrders, usdRate }: Props) {
         }
       />
 
-      <OrdersFilters 
-        search={search} 
-        onSearchChange={(v) => { setSearch(v); setPage(1); }} 
-        filter={filter} 
-        onFilterChange={(v) => { setFilter(v); setPage(1); }} 
-        counts={counts as any} 
-      />
+      <OrdersFilters search={search} onSearchChange={(v) => { setSearch(v); setPage(1); }} filter={filter} onFilterChange={(v) => { setFilter(v); setPage(1); }} counts={counts as any} />
 
-      {/* GRILLE DE CARTES */}
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white">
           <EmptyState icon={Package} title="Aucune commande" description="Vous n'avez pas encore de commande correspondant à ce filtre." />
@@ -134,6 +127,7 @@ export function OrdersTable({ initialOrders, usdRate }: Props) {
             <OrderCard
               key={order.id}
               order={order}
+              usdRate={usdRate}
               isLoading={loadingStatus === order.id}
               onAdvanceStatus={() => advanceStatus(order)}
               onOpenDetails={() => setDetailOrder(order)}
@@ -142,7 +136,6 @@ export function OrdersTable({ initialOrders, usdRate }: Props) {
         </div>
       )}
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-3 mt-6 border border-slate-200 rounded-xl bg-white">
           <div className="text-xs text-slate-500">{pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filtered.length)} sur {filtered.length}</div>
