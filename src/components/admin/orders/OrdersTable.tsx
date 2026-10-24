@@ -9,14 +9,16 @@ import {
   ChevronRight,
   Package,
   RefreshCw,
-  Search,
-  X,
-  AlertCircle,
-  MessageCircle,
   Calendar,
   Wallet,
+  AlertCircle,
+  ArrowRight,
+  Truck,
+  CheckCircle2,
+  Zap,
+  Loader2,
 } from "lucide-react";
-import type { Order, Client } from "@/lib/order-client";
+import type { Order, Client, updateOrderStatus } from "@/lib/order-client";
 import { formatFCFA, formatDate } from "@/lib/admin-utils";
 import { PageHeader } from "@/components/admin/ui/PageHeader";
 import { PageHelp } from "@/components/admin/ui/PageHelp";
@@ -26,9 +28,9 @@ import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { EmptyState } from "@/components/admin/ui/EmptyState";
 import { ShareProjectLink } from "@/components/admin/shared/ShareProjectLink";
 import { OrdersFilters } from "./OrdersFilters";
-import { StatusDropdown } from "./StatusDropdown";
 import { NewOrderModal } from "./NewOrderModal";
 import { OrderDetailModal } from "./OrderDetailModal";
+import { useToast } from "@/components/admin/ui/ToastProvider";
 
 type OrderWithClient = Order & { clients: Client | null };
 type FilterKey = "all" | Order["status"];
@@ -41,10 +43,12 @@ const PAGE_SIZE = 20;
 
 export function OrdersTable({ initialOrders }: Props) {
   const router = useRouter();
+  const toast = useToast();
   const searchParams = useSearchParams();
   const [orders, setOrders] = useState(initialOrders);
   const [newOpen, setNewOpen] = useState(false);
   const [detailOrder, setDetailOrder] = useState<OrderWithClient | null>(null);
+  const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
 
   const initialFilter = (searchParams.get("status") as FilterKey) || "all";
   const [search, setSearch] = useState("");
@@ -102,6 +106,29 @@ export function OrdersTable({ initialOrders }: Props) {
     router.refresh();
   }
 
+  // Fonction pour faire avancer le statut d'un seul clic
+  async function advanceStatus(order: OrderWithClient) {
+    let nextStatus: any = null;
+    if (order.status === "new") nextStatus = "sourcing";
+    else if (order.status === "quoted") nextStatus = "sourcing";
+    else if (order.status === "sourcing") nextStatus = "purchased";
+    else if (order.status === "purchased") nextStatus = "freight";
+    else if (order.status === "freight") nextStatus = "delivered";
+
+    if (!nextStatus) return;
+
+    setLoadingStatus(order.id);
+    try {
+      await updateOrderStatus(order.id, nextStatus);
+      toast.success("Statut mis à jour !");
+      router.refresh();
+    } catch {
+      toast.error("Erreur lors du changement");
+    } finally {
+      setLoadingStatus(null);
+    }
+  }
+
   return (
     <div>
       <PageHeader
@@ -123,34 +150,28 @@ export function OrdersTable({ initialOrders }: Props) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <PageHelp
-          title="💡 Comment lire cette page ?"
-          description="Chaque ligne est une demande ou une commande."
+          title="💡 Comment gérer vos commandes ?"
+          description="Chaque carte est une opportunité."
           steps={[
-            { label: "🟡 Nouveau (Prospect)", description: "Le client a rempli le formulaire. Contactez-le sur WhatsApp." },
-            { label: "🔵 En Recherche", description: "Vous cherchez la marchandise à Dubaï." },
-            { label: "🚚 En transport", description: "La marchandise est en route vers l'Afrique." },
-            { label: "🟢 Livré", description: "Le client a reçu son colis. C'est terminé !" },
+            { label: "1. Prospects", description: "Quand un client remplit le formulaire, sa carte apparaît en rouge. Cliquez sur 'Traiter' pour fixer le prix." },
+            { label: "2. Recherche", description: "Une fois validé, cherchez la marchandise à Dubaï." },
+            { label: "3. Transport", description: "Achetez la marchandise et expédiez-la." },
+            { label: "4. Livraison", description: "Le client reçoit son colis. Encaissez l'argent." },
           ]}
-          tips={["Cliquez sur une commande pour voir les détails et calculer le bénéfice."]}
+          tips={["Cliquez n'importe où sur la carte pour voir les détails."]}
         />
         <ShareProjectLink />
       </div>
 
       <OrdersFilters
         search={search}
-        onSearchChange={(v) => {
-          setSearch(v);
-          setPage(1);
-        }}
+        onSearchChange={(v) => { setSearch(v); setPage(1); }}
         filter={filter}
-        onFilterChange={(v) => {
-          setFilter(v);
-          setPage(1);
-        }}
+        onFilterChange={(v) => { setFilter(v); setPage(1); }}
         counts={counts as any}
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {filtered.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white">
             <EmptyState
@@ -163,52 +184,88 @@ export function OrdersTable({ initialOrders }: Props) {
           paginated.map((order) => {
             const isNew = order.status === "new";
             const hasPrice = !!order.sale_price_fcfa && order.sale_price_fcfa > 0;
+            const isLoading = loadingStatus === order.id;
+
+            // Configuration du bouton principal selon le statut
+            let actionLabel = "Voir les détails";
+            let actionIcon = ArrowRight;
+            let actionColor = "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300";
+            let showAction = true;
+
+            if (isNew) {
+              actionLabel = hasPrice ? "Valider et chercher" : "Traiter la demande";
+              actionIcon = Zap;
+              actionColor = "bg-red-600 text-white hover:bg-red-700 shadow-md shadow-red-500/30";
+            } else if (order.status === "quoted") {
+              actionLabel = "Valider pour Sourcing";
+              actionIcon = ArrowRight;
+              actionColor = "bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/30";
+            } else if (order.status === "sourcing") {
+              actionLabel = "Marquer comme Acheté";
+              actionIcon = CheckCircle2;
+              actionColor = "bg-orange-500 text-white hover:bg-orange-600 shadow-md shadow-orange-500/30";
+            } else if (order.status === "purchased") {
+              actionLabel = "Marquer en Transport";
+              actionIcon = Truck;
+              actionColor = "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-500/30";
+            } else if (order.status === "freight") {
+              actionLabel = "Marquer comme Livré";
+              actionIcon = CheckCircle2;
+              actionColor = "bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-500/30";
+            } else if (order.status === "delivered") {
+              showAction = false; // Plus d'action à faire
+            }
+
+            const ActionIcon = actionIcon;
 
             return (
               <div
                 key={order.id}
                 onClick={() => setDetailOrder(order)}
-                className={`group relative rounded-2xl border transition-all duration-200 cursor-pointer overflow-hidden flex flex-col md:flex-row md:items-center gap-4 p-4 md:p-5 ${
+                className={`group relative rounded-2xl border transition-all duration-200 cursor-pointer overflow-hidden flex flex-col md:flex-row md:items-center gap-4 p-5 ${
                   isNew
-                    ? "border-red-200 bg-red-50/30 hover:bg-red-50 shadow-[0_2px_10px_rgba(239,68,68,0.05)]"
+                    ? "border-red-300 bg-red-50/40 hover:bg-red-50 shadow-[0_2px_15px_rgba(239,68,68,0.08)]"
+                    : order.status === "delivered"
+                    ? "border-emerald-200 bg-emerald-50/20"
                     : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-md"
                 }`}
               >
-                {/* Indicateur de statut à gauche (bordure colorée) */}
-                <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${
+                {/* Indicateur de statut à gauche (bordure épaisse) */}
+                <div className={`absolute left-0 top-0 bottom-0 w-2 ${
                   isNew ? "bg-red-500" :
                   order.status === "delivered" ? "bg-emerald-500" :
-                  order.status === "freight" ? "bg-indigo-500" : "bg-blue-500"
+                  order.status === "freight" ? "bg-indigo-500" :
+                  order.status === "purchased" ? "bg-orange-500" : "bg-blue-500"
                 }`} />
 
-                {/* Client */}
-                <div className="flex items-center gap-3 md:w-1/4 shrink-0 pl-2">
+                {/* Bloc Client & Ref */}
+                <div className="flex items-center gap-3 md:w-1/4 shrink-0 pl-3">
                   <Avatar name={order.clients?.name ?? "?"} size="md" />
                   <div className="min-w-0">
                     <div className="font-bold text-slate-900 truncate">
                       {order.clients?.name ?? "Client inconnu"}
                     </div>
-                    <div className="text-xs text-slate-500 flex items-center gap-1">
-                      <span className="font-mono text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
+                    <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                      <span className="font-mono text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600">
                         {order.order_ref}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Détails commande */}
-                <div className="flex-1 md:w-1/3">
-                  <div className="text-sm font-semibold text-slate-800 line-clamp-1">
+                {/* Bloc Description */}
+                <div className="flex-1 md:w-1/4">
+                  <div className="text-sm font-semibold text-slate-800 line-clamp-2">
                     {order.items_description}
                   </div>
                   <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
                     <Calendar className="h-3 w-3" />
-                    {isNew ? "Reçu récemment" : `Créé le ${formatDate(order.created_at)}`}
+                    {isNew ? "Reçu via le site" : `Créé le ${formatDate(order.created_at)}`}
                   </div>
                 </div>
 
-                {/* Finances */}
-                <div className="flex items-center justify-between md:justify-end gap-6 md:w-1/3 mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
+                {/* Bloc Finances */}
+                <div className="flex items-center justify-between md:justify-end gap-6 md:w-1/4 mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
                   <div className="text-left md:text-right">
                     <div className="text-[10px] uppercase font-bold text-slate-400">Prix de vente</div>
                     {hasPrice ? (
@@ -229,14 +286,31 @@ export function OrdersTable({ initialOrders }: Props) {
                   </div>
                 </div>
 
-                {/* Statut */}
-                <div className="shrink-0 flex items-center justify-between md:justify-end w-full md:w-auto mt-2 md:mt-0" onClick={(e) => e.stopPropagation()}>
-                   <div className="md:hidden text-xs font-semibold text-slate-500">Statut :</div>
-                   <StatusDropdown
-                      orderId={order.id}
-                      currentStatus={order.status}
-                      onChanged={() => router.refresh()}
-                    />
+                {/* Bloc Actions */}
+                <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 md:w-auto" onClick={(e) => e.stopPropagation()}>
+                  <StatusBadge status={order.status} />
+                  
+                  {showAction ? (
+                    <Button
+                      size="md"
+                      disabled={isLoading}
+                      onClick={() => {
+                        if (isNew && !hasPrice) {
+                          setDetailOrder(order); // Ouvre le modal pour mettre le prix
+                        } else {
+                          advanceStatus(order);
+                        }
+                      }}
+                      className={`gap-2 px-4 ${actionColor}`}
+                    >
+                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ActionIcon className="h-4 w-4" />}
+                      {actionLabel}
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="md" onClick={() => setDetailOrder(order)} className="gap-2">
+                      Voir les détails
+                    </Button>
+                  )}
                 </div>
               </div>
             );
