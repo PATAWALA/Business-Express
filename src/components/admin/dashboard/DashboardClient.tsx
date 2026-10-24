@@ -12,6 +12,9 @@ import {
   Plus,
   RefreshCw,
   ArrowRight,
+  Inbox,
+  Users,
+  CheckCircle2,
 } from "lucide-react";
 import type { Order, Task, Client } from "@/lib/order-client";
 import { formatFCFA } from "@/lib/admin-utils";
@@ -39,8 +42,12 @@ export function DashboardClient({ orders, tasks }: Props) {
       0
     );
     const totalMargin = orders.reduce((s, o) => s + (o.margin_fcfa ?? 0), 0);
-    const inTransit = orders.filter((o) => o.status === "freight").length;
+    
+    // Nouveaux calculs
+    const newProspects = orders.filter((o) => o.status === "new").length;
     const inSourcing = orders.filter((o) => o.status === "sourcing").length;
+    const inTransit = orders.filter((o) => o.status === "freight").length;
+    const delivered = orders.filter((o) => o.status === "delivered").length;
 
     const marginRate =
       totalRevenue > 0 ? ((totalMargin / totalRevenue) * 100).toFixed(1) : "0";
@@ -70,8 +77,10 @@ export function DashboardClient({ orders, tasks }: Props) {
     return {
       totalRevenue,
       totalMargin,
-      inTransit,
+      newProspects,
       inSourcing,
+      inTransit,
+      delivered,
       marginRate,
       revenueSparkline,
       marginSparkline,
@@ -86,9 +95,6 @@ export function DashboardClient({ orders, tasks }: Props) {
   });
 
   const pendingTasksCount = tasks.filter((t) => !t.completed).length;
-
-  // ✅ Compte les commandes récentes avec le statut "new"
-  const newProjectsCount = orders.filter((o) => o.status === "new").length;
 
   return (
     <div className="space-y-6">
@@ -126,66 +132,112 @@ export function DashboardClient({ orders, tasks }: Props) {
         </div>
       </div>
 
-      {/* ALERTE : Nouveaux projets */}
-      {newProjectsCount > 0 && (
-        <Link
-          href="/admin/commandes?status=new"
-          className="flex items-center gap-3 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 hover:shadow-md transition-shadow"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shrink-0 animate-pulse text-lg">
-            🆕
-          </div>
-          <div className="flex-1">
-            <div className="text-sm font-bold text-blue-900">
-              {newProjectsCount} nouvelle{newProjectsCount > 1 ? "s" : ""} demande{newProjectsCount > 1 ? "s" : ""} à traiter
+      {/* ALERTE ROUGE + AIDE CÔTE À CÔTE */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        {stats.newProspects > 0 ? (
+          <Link
+            href="/admin/commandes?status=new"
+            className="group relative overflow-hidden flex items-center gap-4 rounded-2xl border-2 border-red-300 bg-gradient-to-r from-red-500 to-red-600 p-5 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:-translate-y-0.5 transition-all"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm text-white shrink-0 animate-pulse">
+              <Inbox className="h-6 w-6" />
             </div>
-            <div className="text-xs text-blue-700">
-              Cliquez pour voir les commandes
+            <div className="flex-1">
+              <div className="text-base font-bold text-white">
+                ⚠️ {stats.newProspects} nouvelle{stats.newProspects > 1 ? "s" : ""} demande{stats.newProspects > 1 ? "s" : ""} !
+              </div>
+              <div className="text-sm text-red-100 mt-0.5">
+                Cliquez ici pour traiter les prospects en attente.
+              </div>
+            </div>
+            <ArrowRight className="h-6 w-6 text-white group-hover:translate-x-1 transition-transform" />
+          </Link>
+        ) : (
+          <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm h-full">
+             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400 shrink-0">
+              <CheckCircle2 className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-slate-700">
+                Aucun prospect en attente
+              </div>
+              <div className="text-xs text-slate-500 mt-0.5">
+                Vous avez traité toutes les demandes.
+              </div>
             </div>
           </div>
-          <ArrowRight className="h-5 w-5 text-blue-600" />
-        </Link>
-      )}
+        )}
 
-      {/* ENCART AIDE */}
-      <PageHelp
-        title="💡 Comment utiliser votre dashboard"
-        description="Vue d'ensemble de votre activité Business Express"
-        steps={[
-          {
-            label: "Consultez vos chiffres en un coup d'œil",
-            description:
-              "Les 4 cartes en haut montrent votre chiffre d'affaires total, votre marge nette, les colis en transit et les commandes en sourcing.",
-          },
-          {
-            label: "Suivez vos tâches urgentes",
-            description:
-              "Les tâches en rouge/orange sont prioritaires aujourd'hui. Cochez-les au fur et à mesure.",
-          },
-          {
-            label: "Partagez votre lien de collecte projet",
-            description:
-              "Envoyez ce lien à vos prospects WhatsApp/TikTok. Ils déposent leur projet et vous les retrouvez dans 'Commandes'.",
-          },
-          {
-            label: "Vérifiez les nouvelles demandes",
-            description:
-              "Le bandeau bleu en haut apparaît quand de nouvelles commandes arrivent. Cliquez pour les traiter.",
-          },
-        ]}
-        tips={[
-          "Marge nette = ce que vous gagnez après avoir payé l'achat et le transport.",
-          "Les données sont mises à jour en temps réel depuis Supabase.",
-          "Utilisez le bouton 'Actualiser' si vous voulez forcer le rafraîchissement.",
-        ]}
-        defaultOpen={false}
-      />
+        <PageHelp
+          title="💡 Aide & Statistiques"
+          description="Comprenez votre activité en un clin d'œil"
+          steps={[
+            {
+              label: "Prospects en attente",
+              description: "Ce sont les clients qui ont rempli le formulaire sur votre site. Contactez-les sur WhatsApp !",
+            },
+            {
+              label: "En Sourcing",
+              description: "Vous avez validé le prix. Vous cherchez maintenant la marchandise à Dubaï.",
+            },
+            {
+              label: "En Transit",
+              description: "La marchandise a été achetée et est en route vers l'Afrique.",
+            },
+            {
+              label: "Livré",
+              description: "Le client a reçu sa commande. L'argent est encaissé.",
+            },
+          ]}
+          tips={[
+            "Marge nette = ce que vous gagnez après avoir payé le fournisseur et le transport.",
+            "Partagez votre lien /projet pour avoir plus de prospects.",
+          ]}
+          defaultOpen={false}
+        />
+      </div>
 
-      {/* 4 STAT CARDS */}
+      {/* 4 STAT CARDS (Maintenant plus claires) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Link href="/admin/commandes?status=new" className="block">
+          <StatCard
+            label="Prospects en attente"
+            value={`${stats.newProspects} demandes`}
+            icon={Users}
+            color="red"
+          />
+        </Link>
+        <Link href="/admin/commandes?status=sourcing" className="block">
+          <StatCard
+            label="En Sourcing"
+            value={`${stats.inSourcing} commandes`}
+            icon={AlertCircle}
+            color="amber"
+          />
+        </Link>
+        <Link href="/admin/commandes?status=freight" className="block">
+          <StatCard
+            label="En Transit"
+            value={`${stats.inTransit} colis`}
+            icon={Package}
+            color="purple"
+          />
+        </Link>
+        <Link href="/admin/commandes?status=delivered" className="block">
+          <StatCard
+            label="Clients Livrés"
+            value={`${stats.delivered} commandes`}
+            icon={CheckCircle2}
+            color="green"
+          />
+        </Link>
+      </div>
+
+      {/* FINANCES (CA et Marge) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Link href="/admin/finances" className="block">
           <StatCard
-            label="Chiffre d'affaires"
+            label="Chiffre d'affaires total"
             value={formatFCFA(stats.totalRevenue)}
             icon={Wallet}
             color="blue"
@@ -195,28 +247,12 @@ export function DashboardClient({ orders, tasks }: Props) {
         </Link>
         <Link href="/admin/finances" className="block">
           <StatCard
-            label="Marge nette"
+            label="Marge nette totale"
             value={formatFCFA(stats.totalMargin)}
             icon={TrendingUp}
             color="green"
             trend={`${stats.marginRate}% du CA`}
             sparklineData={stats.marginSparkline}
-          />
-        </Link>
-        <Link href="/admin/commandes?status=freight" className="block">
-          <StatCard
-            label="En transit"
-            value={`${stats.inTransit} colis`}
-            icon={Package}
-            color="purple"
-          />
-        </Link>
-        <Link href="/admin/commandes?status=sourcing" className="block">
-          <StatCard
-            label="En sourcing"
-            value={`${stats.inSourcing} commandes`}
-            icon={AlertCircle}
-            color="amber"
           />
         </Link>
       </div>
