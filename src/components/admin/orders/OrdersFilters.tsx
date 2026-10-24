@@ -16,12 +16,12 @@ interface Props {
 
 const filterOptions: { key: FilterKey; label: string }[] = [
   { key: "all", label: "Toutes" },
-  { key: "new", label: "🟡 Nouveaux" },
-  { key: "quoted", label: "🟣 Devis" },
-  { key: "sourcing", label: "Sourcing" },
-  { key: "purchased", label: "Acheté" },
-  { key: "freight", label: "En fret" },
-  { key: "delivered", label: "Livré" },
+  { key: "new", label: "🟡 Nouveaux (Prospects)" },
+  { key: "quoted", label: "🟣 Devis envoyé" },
+  { key: "sourcing", label: "🔵 En Sourcing" },
+  { key: "purchased", label: "🟠 Acheté" },
+  { key: "freight", label: "🚚 En fret" },
+  { key: "delivered", label: "🟢 Livré" },
 ];
 
 const filterColors: Record<string, string> = {
@@ -29,8 +29,8 @@ const filterColors: Record<string, string> = {
   new: "bg-amber-500 text-white",
   quoted: "bg-purple-600 text-white",
   sourcing: "bg-blue-600 text-white",
-  purchased: "bg-indigo-600 text-white",
-  freight: "bg-fuchsia-600 text-white",
+  purchased: "bg-orange-500 text-white",
+  freight: "bg-indigo-600 text-white",
   delivered: "bg-emerald-600 text-white",
 };
 
