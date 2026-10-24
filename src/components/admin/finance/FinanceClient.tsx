@@ -33,33 +33,42 @@ export function FinanceClient({ orders, exchangeRate, usdRate }: Props) {
   }, [orders, period]);
 
   const stats = useMemo(() => {
-    const totalRevenue = filtered.reduce((s, o) => s + (o.sale_price_fcfa ?? 0), 0);
-    const totalMargin = filtered.reduce((s, o) => s + (o.margin_fcfa ?? 0), 0);
+    // Calculs en FCFA (base de données)
+    const totalRevenueFcfa = filtered.reduce((s, o) => s + (o.sale_price_fcfa ?? 0), 0);
+    const totalMarginFcfa = filtered.reduce((s, o) => s + (o.margin_fcfa ?? 0), 0);
     
     const totalCostAED = filtered.reduce((s, o) => s + (o.purchase_price_aed ?? 0) + (o.transport_cost_aed ?? 0), 0);
     const totalTransferUSD = filtered.reduce((s, o) => s + (o.transfer_fee_usd ?? 0), 0);
-    const totalSpent = (totalCostAED * exchangeRate) + (totalTransferUSD * usdRate);
+    const totalSpentFcfa = (totalCostAED * exchangeRate) + (totalTransferUSD * usdRate);
 
-    // Réel (Uniquement les livrés)
     const deliveredOrders = filtered.filter(o => o.status === "delivered");
-    const realizedRevenue = deliveredOrders.reduce((s, o) => s + (o.sale_price_fcfa ?? 0), 0);
-    const realizedMargin = deliveredOrders.reduce((s, o) => s + (o.margin_fcfa ?? 0), 0);
+    const realizedRevenueFcfa = deliveredOrders.reduce((s, o) => s + (o.sale_price_fcfa ?? 0), 0);
+    const realizedMarginFcfa = deliveredOrders.reduce((s, o) => s + (o.margin_fcfa ?? 0), 0);
 
-    return { totalSpent, totalRevenue, totalMargin, realizedRevenue, realizedMargin };
+    // Conversion en USD pour l'affichage principal
+    return { 
+      totalSpent: Math.round(totalSpentFcfa / usdRate),
+      totalRevenue: Math.round(totalRevenueFcfa / usdRate),
+      totalMargin: Math.round(totalMarginFcfa / usdRate),
+      realizedRevenue: Math.round(realizedRevenueFcfa / usdRate),
+      realizedMargin: Math.round(realizedMarginFcfa / usdRate),
+      // Garder les valeurs FCFA pour les sous-titres
+      totalSpentFcfa, totalRevenueFcfa, totalMarginFcfa, realizedRevenueFcfa, realizedMarginFcfa
+    };
   }, [filtered, exchangeRate, usdRate]);
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Finances"
-        subtitle="Suivi de votre trésorerie en temps réel"
+        subtitle="Votre argent, vos dépenses et vos bénéfices en Dollars."
         action={
           <div className="flex flex-wrap gap-2">
             {(
               [
-                { key: "all", label: "Tout le temps" },
+                { key: "all", label: "Tout" },
                 { key: "month", label: "Ce mois-ci" },
-                { key: "3months", label: "3 derniers mois" },
+                { key: "3months", label: "3 mois" },
               ] as const
             ).map((opt) => {
               const isActive = period === opt.key;
@@ -80,37 +89,37 @@ export function FinanceClient({ orders, exchangeRate, usdRate }: Props) {
         }
       />
 
-      {/* 4 CARTES FINANCIÈRES ULTRA-CLAIRES */}
+      {/* 4 CARTES FINANCIÈRES (Affichage en Dollars) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Argent Dépensé"
-          value={formatFCFA(stats.totalSpent)}
+          value={`${stats.totalSpent.toLocaleString("fr-FR")} $`}
           icon={ArrowDownRight}
           color="amber"
-          trend="Achat + Transport + Transfert"
+          trend={`≈ ${formatFCFA(stats.totalSpentFcfa)}`}
           trendUp={false}
         />
         <StatCard
           label="Prix Total Attendu"
-          value={formatFCFA(stats.totalRevenue)}
+          value={`${stats.totalRevenue.toLocaleString("fr-FR")} $`}
           icon={Wallet}
           color="blue"
-          trend="Ce que les clients doivent payer"
+          trend={`≈ ${formatFCFA(stats.totalRevenueFcfa)}`}
         />
         <StatCard
           label="Bénéfice Prévu"
-          value={formatFCFA(stats.totalMargin)}
+          value={`${stats.totalMargin.toLocaleString("fr-FR")} $`}
           icon={TrendingUp}
           color="green"
-          trend="Vos frais de service"
+          trend={`≈ ${formatFCFA(stats.totalMarginFcfa)}`}
         />
         <StatCard
           label="Argent Encaissé (Livré)"
-          value={formatFCFA(stats.realizedRevenue)}
+          value={`${stats.realizedRevenue.toLocaleString("fr-FR")} $`}
           icon={PackageCheck}
           color="purple"
           variant="dark"
-          trend={`+${formatFCFA(stats.realizedMargin)} de bénéfice`}
+          trend={`+${stats.realizedMargin.toLocaleString("fr-FR")} $ de marge`}
         />
       </div>
 
@@ -120,7 +129,7 @@ export function FinanceClient({ orders, exchangeRate, usdRate }: Props) {
         <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-200">
             <h2 className="font-bold text-slate-900">Détail par commande</h2>
-            <p className="text-xs text-slate-500">Le vrai coût et la vraie marge de chaque opération</p>
+            <p className="text-xs text-slate-500">Le vrai coût et la vraie marge de chaque opération (en $)</p>
           </div>
           {filtered.length === 0 ? (
             <EmptyState icon={Wallet} title="Aucune commande" description="Créez une commande pour voir les détails." />
@@ -140,6 +149,14 @@ export function FinanceClient({ orders, exchangeRate, usdRate }: Props) {
                   {filtered.map((o) => {
                     const costAed = (o.purchase_price_aed ?? 0) + (o.transport_cost_aed ?? 0);
                     const costFcfa = (costAed * exchangeRate) + ((o.transfer_fee_usd ?? 0) * usdRate);
+                    
+                    // Conversion en USD pour l'affichage
+                    const costUsd = Math.round(costFcfa / usdRate);
+                    const saleUsd = Math.round((o.sale_price_fcfa ?? 0) / usdRate);
+                    const marginUsd = Math.round((o.margin_fcfa ?? 0) / usdRate);
+                    
+                    const isNegative = marginUsd < 0;
+
                     return (
                       <tr key={o.id} className="hover:bg-slate-50">
                         <td className="px-4 py-3">
@@ -147,13 +164,13 @@ export function FinanceClient({ orders, exchangeRate, usdRate }: Props) {
                           <div className="text-[10px] font-mono text-slate-500">{o.order_ref}</div>
                         </td>
                         <td className="px-4 py-3 text-right font-semibold text-red-500">
-                          {costFcfa > 0 ? `-${formatFCFA(costFcfa)}` : "—"}
+                          {costUsd > 0 ? `-${costUsd.toLocaleString("fr-FR")} $` : "—"}
                         </td>
                         <td className="px-4 py-3 text-right font-semibold text-slate-900">
-                          {o.sale_price_fcfa ? formatFCFA(o.sale_price_fcfa) : "—"}
+                          {saleUsd > 0 ? `${saleUsd.toLocaleString("fr-FR")} $` : "—"}
                         </td>
-                        <td className="px-4 py-3 text-right font-bold text-emerald-600">
-                          {o.margin_fcfa ? `+${formatFCFA(o.margin_fcfa)}` : "—"}
+                        <td className={`px-4 py-3 text-right font-bold ${isNegative ? "text-red-600" : "text-emerald-600"}`}>
+                          {marginUsd !== 0 ? `${isNegative ? "" : "+"}${marginUsd.toLocaleString("fr-FR")} $` : "—"}
                         </td>
                         <td className="px-4 py-3"><StatusBadge status={o.status} /></td>
                       </tr>

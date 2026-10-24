@@ -126,3 +126,4 @@ export function OrderCard({ order, isLoading, onAdvanceStatus, onOpenDetails }: 
     </div>
   );
 }
+
