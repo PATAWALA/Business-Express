@@ -20,8 +20,7 @@ import type { Order, Task, Client } from "@/lib/order-client";
 import { formatFCFA } from "@/lib/admin-utils";
 import { StatCard } from "@/components/admin/ui/StatCard";
 import { Button } from "@/components/admin/ui/Button";
-import { ShareProjectLink } from "@/components/admin/shared/ShareProjectLink";
-import { RevenueChart } from "./RevenueChart";
+import { RevenueChart } from "./RevenueChart"; // ✅ Remis
 import { UrgentTasks } from "./UrgentTasks";
 import { RecentOrders } from "./RecentOrders";
 
@@ -41,7 +40,6 @@ export function DashboardClient({ orders, tasks, usdRate = 2800 }: Props) {
     const totalRevenue = orders.reduce((s, o) => s + (o.sale_price_fcfa ?? 0), 0);
     const totalMargin = orders.reduce((s, o) => s + (o.margin_fcfa ?? 0), 0);
     
-    // Dépenses (Uniquement ceux qui ont un prix d'achat renseigné)
     const totalCostAED = orders.reduce((s, o) => s + (o.purchase_price_aed ?? 0) + (o.transport_cost_aed ?? 0), 0);
     const totalTransferUSD = orders.reduce((s, o) => s + (o.transfer_fee_usd ?? 0), 0);
     const totalSpent = (totalCostAED * (orders[0]?.exchange_rate_aed_to_fcfa || 762)) + (totalTransferUSD * usdRate);
@@ -54,7 +52,7 @@ export function DashboardClient({ orders, tasks, usdRate = 2800 }: Props) {
 
     const marginRate = totalRevenue > 0 ? ((totalMargin / totalRevenue) * 100).toFixed(1) : "0";
 
-    // Sparklines (6 mois)
+    // Sparklines (6 mois) pour les cartes
     const revenueSparkline: number[] = [];
     const marginSparkline: number[] = [];
     for (let i = 5; i >= 0; i--) {
@@ -81,11 +79,9 @@ export function DashboardClient({ orders, tasks, usdRate = 2800 }: Props) {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 
-  const pendingTasksCount = tasks.filter((t) => !t.completed).length;
-
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* HEADER ULTRA-ÉPURÉ */}
+      {/* HEADER DE PAGE */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Tableau de bord</h1>
@@ -126,7 +122,7 @@ export function DashboardClient({ orders, tasks, usdRate = 2800 }: Props) {
 
       {/* --- SECTION 1 : FINANCES --- */}
       <div>
-        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Vue financière (Tout le temps)</h2>
+        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Vue financière</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard
             label="Argent Dépensé (Achat + Fret)"
@@ -174,18 +170,11 @@ export function DashboardClient({ orders, tasks, usdRate = 2800 }: Props) {
         </div>
       </div>
 
-      {/* GRAPHIQUE ET LIEN */}
-      <div className="grid lg:grid-cols-3 gap-6 pt-4">
-        <div className="lg:col-span-2">
-          <RevenueChart orders={orders} />
-        </div>
-        <div>
-          <ShareProjectLink />
-        </div>
-      </div>
+      {/* GRAPHIQUE (Remis ici) */}
+      <RevenueChart orders={orders} />
 
       {/* TÂCHES ET DERNIÈRES COMMANDES */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
         <UrgentTasks tasks={tasks} />
         <RecentOrders orders={orders} />
       </div>
