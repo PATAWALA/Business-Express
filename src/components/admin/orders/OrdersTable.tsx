@@ -5,13 +5,16 @@ import { useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Plus,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   ChevronLeft,
   ChevronRight,
   Package,
   RefreshCw,
+  Search,
+  X,
+  AlertCircle,
+  MessageCircle,
+  Calendar,
+  Wallet,
 } from "lucide-react";
 import type { Order, Client } from "@/lib/order-client";
 import { formatFCFA, formatDate } from "@/lib/admin-utils";
@@ -19,6 +22,7 @@ import { PageHeader } from "@/components/admin/ui/PageHeader";
 import { PageHelp } from "@/components/admin/ui/PageHelp";
 import { Button } from "@/components/admin/ui/Button";
 import { Avatar } from "@/components/admin/ui/Avatar";
+import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { EmptyState } from "@/components/admin/ui/EmptyState";
 import { ShareProjectLink } from "@/components/admin/shared/ShareProjectLink";
 import { OrdersFilters } from "./OrdersFilters";
@@ -27,8 +31,6 @@ import { NewOrderModal } from "./NewOrderModal";
 import { OrderDetailModal } from "./OrderDetailModal";
 
 type OrderWithClient = Order & { clients: Client | null };
-type SortKey = "created_at" | "margin_fcfa" | "order_ref";
-type SortDir = "asc" | "desc";
 type FilterKey = "all" | Order["status"];
 
 interface Props {
@@ -45,11 +47,8 @@ export function OrdersTable({ initialOrders }: Props) {
   const [detailOrder, setDetailOrder] = useState<OrderWithClient | null>(null);
 
   const initialFilter = (searchParams.get("status") as FilterKey) || "all";
-
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterKey>(initialFilter);
-  const [sortKey, setSortKey] = useState<SortKey>("created_at");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -86,42 +85,18 @@ export function OrdersTable({ initialOrders }: Props) {
       );
     }
 
+    // On trie pour mettre les "new" (prospects) en haut, puis par date
     return [...list].sort((a, b) => {
-      let cmp = 0;
-      if (sortKey === "created_at") {
-        cmp = (a.created_at ?? "").localeCompare(b.created_at ?? "");
-      } else if (sortKey === "margin_fcfa") {
-        cmp = (a.margin_fcfa ?? 0) - (b.margin_fcfa ?? 0);
-      } else if (sortKey === "order_ref") {
-        cmp = a.order_ref.localeCompare(b.order_ref);
-      }
-      return sortDir === "asc" ? cmp : -cmp;
+      if (a.status === "new" && b.status !== "new") return -1;
+      if (b.status === "new" && a.status !== "new") return 1;
+      return (b.created_at ?? "").localeCompare(a.created_at ?? "");
     });
-  }, [orders, filter, search, sortKey, sortDir]);
+  }, [orders, filter, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageStart = (safePage - 1) * PAGE_SIZE;
   const paginated = filtered.slice(pageStart, pageStart + PAGE_SIZE);
-
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
-    else {
-      setSortKey(key);
-      setSortDir("desc");
-    }
-    setPage(1);
-  }
-
-  function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col)
-      return <ArrowUpDown className="h-3 w-3 text-slate-400" />;
-    return sortDir === "asc" ? (
-      <ArrowUp className="h-3 w-3 text-blue-600" />
-    ) : (
-      <ArrowDown className="h-3 w-3 text-blue-600" />
-    );
-  }
 
   function refresh() {
     router.refresh();
@@ -130,25 +105,15 @@ export function OrdersTable({ initialOrders }: Props) {
   return (
     <div>
       <PageHeader
-        title="Commandes"
-        subtitle={`${orders.length} commande${orders.length > 1 ? "s" : ""} au total`}
+        title="Commandes & Prospects"
+        subtitle="Gérez vos demandes clients et vos livraisons"
         action={
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="md"
-              onClick={refresh}
-              className="gap-2"
-            >
+            <Button variant="outline" size="md" onClick={refresh} className="gap-2 bg-white">
               <RefreshCw className="h-4 w-4" />
               <span className="hidden sm:inline">Actualiser</span>
             </Button>
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => setNewOpen(true)}
-              className="gap-2"
-            >
+            <Button variant="primary" size="md" onClick={() => setNewOpen(true)} className="gap-2">
               <Plus className="h-4 w-4" />
               Nouvelle commande
             </Button>
@@ -156,41 +121,18 @@ export function OrdersTable({ initialOrders }: Props) {
         }
       />
 
-      <div className="mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <PageHelp
-          title="📦 Gérez vos importations de A à Z"
-          description="De la demande du client jusqu'à la livraison"
+          title="💡 Comment lire cette page ?"
+          description="Chaque ligne est une demande ou une commande."
           steps={[
-            {
-              label: "1. Réceptionnez la demande",
-              description:
-                "Si un client remplit le formulaire sur votre site, sa demande arrive ici avec le statut 'Nouveau'. Cliquez dessus pour voir les détails.",
-            },
-            {
-              label: "2. Contactez et chiffrez",
-              description:
-                "Contactez le client sur WhatsApp. Une fois d'accord, cliquez sur 'Modifier' pour saisir le prix de vente et passer la commande en 'Sourcing'.",
-            },
-            {
-              label: "3. Suivez l'avancée",
-              description:
-                "Faites avancer la commande : Sourcing (recherche) → Acheté → En fret (transport) → Livré.",
-            },
-            {
-              label: "4. Remplissez les coûts",
-              description:
-                "Indiquez le prix d'achat chez le fournisseur et le transport. Votre bénéfice (marge) se calcule automatiquement.",
-            },
+            { label: "🟡 Nouveau (Prospect)", description: "Le client a rempli le formulaire. Contactez-le sur WhatsApp." },
+            { label: "🔵 En Recherche", description: "Vous cherchez la marchandise à Dubaï." },
+            { label: "🚚 En transport", description: "La marchandise est en route vers l'Afrique." },
+            { label: "🟢 Livré", description: "Le client a reçu son colis. C'est terminé !" },
           ]}
-          tips={[
-            "Utilisez la recherche pour retrouver un client ou une commande.",
-            "Envoyez le lien du formulaire à vos prospects pour qu'ils remplissent eux-mêmes leurs demandes.",
-            "Cliquez sur n'importe quelle ligne pour voir les détails ou modifier.",
-          ]}
+          tips={["Cliquez sur une commande pour voir les détails et calculer le bénéfice."]}
         />
-      </div>
-
-      <div className="mb-4">
         <ShareProjectLink />
       </div>
 
@@ -208,199 +150,130 @@ export function OrdersTable({ initialOrders }: Props) {
         counts={counts as any}
       />
 
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
+      <div className="space-y-3">
         {filtered.length === 0 ? (
-          <EmptyState
-            icon={Package}
-            title={
-              search || filter !== "all" ? "Aucun résultat" : "Aucune commande"
-            }
-            description={
-              search || filter !== "all"
-                ? "Essayez d'ajuster votre recherche ou vos filtres."
-                : "Créez votre première commande pour commencer."
-            }
-            action={
-              !search && filter === "all" ? (
-                <Button onClick={() => setNewOpen(true)}>
-                  <Plus className="h-4 w-4" />
-                  Nouvelle commande
-                </Button>
-              ) : undefined
-            }
-          />
+          <div className="rounded-2xl border border-slate-200 bg-white">
+            <EmptyState
+              icon={Package}
+              title="Aucune commande"
+              description="Vous n'avez pas encore de commande correspondant à ce filtre."
+            />
+          </div>
         ) : (
-          <>
-            {/* Version Desktop */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr className="text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                    <th className="px-4 py-3">
-                      <button
-                        onClick={() => toggleSort("order_ref")}
-                        className="flex items-center gap-1 hover:text-slate-900"
-                      >
-                        Réf.
-                        <SortIcon col="order_ref" />
-                      </button>
-                    </th>
-                    <th className="px-4 py-3">Client</th>
-                    <th className="px-4 py-3">Article</th>
-                    <th className="px-4 py-3 text-right">Vente</th>
-                    <th className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => toggleSort("margin_fcfa")}
-                        className="flex items-center gap-1 hover:text-slate-900 ml-auto"
-                      >
-                        Marge
-                        <SortIcon col="margin_fcfa" />
-                      </button>
-                    </th>
-                    <th className="px-4 py-3">Livraison</th>
-                    <th className="px-4 py-3">Statut</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {paginated.map((order) => (
-                    <tr
-                      key={order.id}
-                      onClick={() => setDetailOrder(order)}
-                      className="hover:bg-slate-50 cursor-pointer transition-colors"
-                    >
-                      <td className="px-4 py-3 font-mono text-xs font-bold text-slate-900">
-                        {order.order_ref}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <Avatar
-                            name={order.clients?.name ?? "?"}
-                            size="sm"
-                          />
-                          <span className="text-slate-700 text-sm">
-                            {order.clients?.name ?? "—"}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-slate-600 max-w-[220px] truncate">
-                        {order.items_description}
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold text-slate-900">
-                        {order.sale_price_fcfa
-                          ? formatFCFA(order.sale_price_fcfa)
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold text-emerald-600">
-                        {formatFCFA(order.margin_fcfa)}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-slate-500">
-                        {formatDate(order.expected_delivery)}
-                      </td>
-                      <td
-                        className="px-4 py-3"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <StatusDropdown
-                          orderId={order.id}
-                          currentStatus={order.status}
-                          onChanged={() => router.refresh()}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          paginated.map((order) => {
+            const isNew = order.status === "new";
+            const hasPrice = !!order.sale_price_fcfa && order.sale_price_fcfa > 0;
 
-            {/* Version Mobile */}
-            <div className="md:hidden divide-y divide-slate-100">
-              {paginated.map((order) => (
-                <div
-                  key={order.id}
-                  onClick={() => setDetailOrder(order)}
-                  className="p-4 hover:bg-slate-50 cursor-pointer"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Avatar name={order.clients?.name ?? "?"} size="sm" />
-                      <div>
-                        <div className="text-xs font-mono font-bold text-slate-900">
-                          {order.order_ref}
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          {order.clients?.name ?? "—"}
-                        </div>
-                      </div>
+            return (
+              <div
+                key={order.id}
+                onClick={() => setDetailOrder(order)}
+                className={`group relative rounded-2xl border transition-all duration-200 cursor-pointer overflow-hidden flex flex-col md:flex-row md:items-center gap-4 p-4 md:p-5 ${
+                  isNew
+                    ? "border-red-200 bg-red-50/30 hover:bg-red-50 shadow-[0_2px_10px_rgba(239,68,68,0.05)]"
+                    : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-md"
+                }`}
+              >
+                {/* Indicateur de statut à gauche (bordure colorée) */}
+                <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${
+                  isNew ? "bg-red-500" :
+                  order.status === "delivered" ? "bg-emerald-500" :
+                  order.status === "freight" ? "bg-indigo-500" : "bg-blue-500"
+                }`} />
+
+                {/* Client */}
+                <div className="flex items-center gap-3 md:w-1/4 shrink-0 pl-2">
+                  <Avatar name={order.clients?.name ?? "?"} size="md" />
+                  <div className="min-w-0">
+                    <div className="font-bold text-slate-900 truncate">
+                      {order.clients?.name ?? "Client inconnu"}
                     </div>
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <StatusDropdown
-                        orderId={order.id}
-                        currentStatus={order.status}
-                        onChanged={() => router.refresh()}
-                      />
+                    <div className="text-xs text-slate-500 flex items-center gap-1">
+                      <span className="font-mono text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
+                        {order.order_ref}
+                      </span>
                     </div>
                   </div>
-                  <div className="text-sm text-slate-700 mb-2">
+                </div>
+
+                {/* Détails commande */}
+                <div className="flex-1 md:w-1/3">
+                  <div className="text-sm font-semibold text-slate-800 line-clamp-1">
                     {order.items_description}
                   </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">
-                      Vente :{" "}
-                      {order.sale_price_fcfa
-                        ? formatFCFA(order.sale_price_fcfa)
-                        : "—"}
-                    </span>
-                    <span className="font-semibold text-emerald-600">
-                      Marge : {formatFCFA(order.margin_fcfa)}
-                    </span>
+                  <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                    <Calendar className="h-3 w-3" />
+                    {isNew ? "Reçu récemment" : `Créé le ${formatDate(order.created_at)}`}
                   </div>
                 </div>
-              ))}
-            </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50">
-                <div className="text-xs text-slate-500">
-                  {pageStart + 1}–
-                  {Math.min(pageStart + PAGE_SIZE, filtered.length)} sur{" "}
-                  {filtered.length}
+                {/* Finances */}
+                <div className="flex items-center justify-between md:justify-end gap-6 md:w-1/3 mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
+                  <div className="text-left md:text-right">
+                    <div className="text-[10px] uppercase font-bold text-slate-400">Prix de vente</div>
+                    {hasPrice ? (
+                      <div className="font-semibold text-slate-900">{formatFCFA(order.sale_price_fcfa)}</div>
+                    ) : (
+                      <div className="font-semibold text-amber-600 flex items-center gap-1 md:justify-end">
+                        <AlertCircle className="h-3 w-3" /> À définir
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase font-bold text-emerald-600 flex items-center gap-1 md:justify-end">
+                      <Wallet className="h-3 w-3" /> Bénéfice
+                    </div>
+                    <div className="font-bold text-emerald-600">
+                      {hasPrice ? formatFCFA(order.margin_fcfa) : "—"}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setPage(safePage - 1)}
-                    disabled={safePage === 1}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <span className="text-xs font-semibold text-slate-700 px-2">
-                    {safePage} / {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setPage(safePage + 1)}
-                    disabled={safePage === totalPages}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
+
+                {/* Statut */}
+                <div className="shrink-0 flex items-center justify-between md:justify-end w-full md:w-auto mt-2 md:mt-0" onClick={(e) => e.stopPropagation()}>
+                   <div className="md:hidden text-xs font-semibold text-slate-500">Statut :</div>
+                   <StatusDropdown
+                      orderId={order.id}
+                      currentStatus={order.status}
+                      onChanged={() => router.refresh()}
+                    />
                 </div>
               </div>
-            )}
-          </>
+            );
+          })
         )}
       </div>
 
-      <NewOrderModal
-        open={newOpen}
-        onClose={() => setNewOpen(false)}
-        onCreated={refresh}
-      />
-      <OrderDetailModal
-        order={detailOrder}
-        onClose={() => setDetailOrder(null)}
-        onSaved={refresh}
-      />
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-3 mt-4 border border-slate-200 rounded-xl bg-white">
+          <div className="text-xs text-slate-500">
+            {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filtered.length)} sur {filtered.length}
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(safePage - 1)}
+              disabled={safePage === 1}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="text-xs font-semibold text-slate-700 px-3">
+              {safePage} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(safePage + 1)}
+              disabled={safePage === totalPages}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <NewOrderModal open={newOpen} onClose={() => setNewOpen(false)} onCreated={refresh} />
+      <OrderDetailModal order={detailOrder} onClose={() => setDetailOrder(null)} onSaved={refresh} />
     </div>
   );
 }
