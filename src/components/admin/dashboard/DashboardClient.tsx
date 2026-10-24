@@ -5,22 +5,13 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Wallet,
-  TrendingUp,
-  Package,
-  AlertCircle,
-  Plus,
-  RefreshCw,
-  ArrowRight,
-  Users,
-  CheckCircle2,
-  ArrowDownRight,
+  Wallet, TrendingUp, Package, AlertCircle, Plus, RefreshCw, ArrowRight, Users, CheckCircle2, ArrowDownRight,
 } from "lucide-react";
 import type { Order, Task, Client } from "@/lib/order-client";
 import { formatFCFA } from "@/lib/admin-utils";
 import { StatCard } from "@/components/admin/ui/StatCard";
 import { Button } from "@/components/admin/ui/Button";
-import { RevenueChart } from "./RevenueChart"; // ✅ Remis
+import { RevenueChart } from "./RevenueChart";
 import { UrgentTasks } from "./UrgentTasks";
 import { RecentOrders } from "./RecentOrders";
 
@@ -30,13 +21,26 @@ interface Props {
   orders: OrderWithClient[];
   tasks: Task[];
   usdRate: number;
+  adminName: string; // ✅ Ajouté
 }
 
-export function DashboardClient({ orders, tasks, usdRate = 2800 }: Props) {
+export function DashboardClient({ orders, tasks, usdRate = 2800, adminName }: Props) {
   const router = useRouter();
 
+  // --- LOGIQUE DE SALUTATION ---
+  const now = new Date();
+  const hour = now.getHours();
+  let greeting = "Bonjour";
+  let emoji = "👋";
+  if (hour < 12) { greeting = "Bonjour"; emoji = "☀️"; }
+  else if (hour < 18) { greeting = "Bon après-midi"; emoji = "👋"; }
+  else { greeting = "Bonsoir"; emoji = "🌙"; }
+
+  const today = now.toLocaleDateString("fr-FR", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+
   const stats = useMemo(() => {
-    // --- CHIFFRES FINANCIERS ---
     const totalRevenue = orders.reduce((s, o) => s + (o.sale_price_fcfa ?? 0), 0);
     const totalMargin = orders.reduce((s, o) => s + (o.margin_fcfa ?? 0), 0);
     
@@ -44,7 +48,6 @@ export function DashboardClient({ orders, tasks, usdRate = 2800 }: Props) {
     const totalTransferUSD = orders.reduce((s, o) => s + (o.transfer_fee_usd ?? 0), 0);
     const totalSpent = (totalCostAED * (orders[0]?.exchange_rate_aed_to_fcfa || 762)) + (totalTransferUSD * usdRate);
 
-    // --- STATUTS COMMANDES ---
     const newProspects = orders.filter((o) => o.status === "new").length;
     const inSourcing = orders.filter((o) => o.status === "sourcing" || o.status === "quoted").length;
     const inTransit = orders.filter((o) => o.status === "freight" || o.status === "purchased").length;
@@ -52,7 +55,6 @@ export function DashboardClient({ orders, tasks, usdRate = 2800 }: Props) {
 
     const marginRate = totalRevenue > 0 ? ((totalMargin / totalRevenue) * 100).toFixed(1) : "0";
 
-    // Sparklines (6 mois) pour les cartes
     const revenueSparkline: number[] = [];
     const marginSparkline: number[] = [];
     for (let i = 5; i >= 0; i--) {
@@ -75,16 +77,14 @@ export function DashboardClient({ orders, tasks, usdRate = 2800 }: Props) {
     };
   }, [orders, usdRate]);
 
-  const today = new Date().toLocaleDateString("fr-FR", {
-    weekday: "long", day: "numeric", month: "long", year: "numeric",
-  });
-
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* HEADER DE PAGE */}
+      {/* HEADER PERSONNALISÉ */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Tableau de bord</h1>
+          <h1 className="text-2xl font-bold text-slate-900">
+            {greeting} {adminName} {emoji}
+          </h1>
           <p className="text-sm text-slate-500 mt-1 capitalize">{today}</p>
         </div>
         <div className="flex gap-2">
@@ -99,7 +99,7 @@ export function DashboardClient({ orders, tasks, usdRate = 2800 }: Props) {
         </div>
       </div>
 
-      {/* ALERTE PROSPECTS (Uniquement si nouveaux) */}
+      {/* ALERTE PROSPECTS */}
       {stats.newProspects > 0 && (
         <Link
           href="/admin/commandes?status=new"
@@ -120,7 +120,7 @@ export function DashboardClient({ orders, tasks, usdRate = 2800 }: Props) {
         </Link>
       )}
 
-      {/* --- SECTION 1 : FINANCES --- */}
+      {/* FINANCES */}
       <div>
         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Vue financière</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -151,7 +151,7 @@ export function DashboardClient({ orders, tasks, usdRate = 2800 }: Props) {
         </div>
       </div>
 
-      {/* --- SECTION 2 : ÉTAT DES COMMANDES --- */}
+      {/* ÉTAT DES COMMANDES */}
       <div>
         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">État des commandes</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -170,7 +170,7 @@ export function DashboardClient({ orders, tasks, usdRate = 2800 }: Props) {
         </div>
       </div>
 
-      {/* GRAPHIQUE (Remis ici) */}
+      {/* GRAPHIQUE */}
       <RevenueChart orders={orders} />
 
       {/* TÂCHES ET DERNIÈRES COMMANDES */}
