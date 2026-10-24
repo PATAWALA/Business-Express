@@ -18,7 +18,11 @@ import {
   Zap,
   Loader2,
 } from "lucide-react";
-import type { Order, Client, updateOrderStatus } from "@/lib/order-client";
+
+// ✅ CORRECTION ICI : On sépare les types des fonctions
+import type { Order, Client } from "@/lib/order-client";
+import { updateOrderStatus } from "@/lib/order-client";
+
 import { formatFCFA, formatDate } from "@/lib/admin-utils";
 import { PageHeader } from "@/components/admin/ui/PageHeader";
 import { PageHelp } from "@/components/admin/ui/PageHelp";
