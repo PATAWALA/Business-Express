@@ -42,35 +42,21 @@ export function StatCard({
       <div className="relative overflow-hidden rounded-2xl bg-slate-900 p-5 text-white shadow-sm h-full flex flex-col min-h-[148px]">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white_0%,_transparent_60%)]" />
         <div className="relative flex flex-col h-full">
-          {/* En-tête : icône + sparkline */}
           <div className="flex items-start justify-between mb-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10">
               <Icon className="h-4 w-4 text-white" />
             </div>
             {sparklineData && sparklineData.length > 1 && (
-              <Sparkline
-                data={sparklineData}
-                color="#ffffff"
-                width={80}
-                height={32}
-                className="opacity-60"
-              />
+              <Sparkline data={sparklineData} color="#ffffff" width={80} height={32} className="opacity-60" />
             )}
           </div>
-          {/* Label + valeur */}
           <p className="text-xs font-medium text-slate-300 uppercase tracking-wide">
             {label}
           </p>
           <p className="mt-1 text-2xl font-bold tracking-tight">{value}</p>
-          {/* Trend : espace réservé même si vide */}
           <div className="mt-auto pt-2 h-5">
             {trend && (
-              <p
-                className={cn(
-                  "text-xs font-medium",
-                  trendUp ? "text-emerald-400" : "text-red-400"
-                )}
-              >
+              <p className={cn("text-xs font-medium", trendUp ? "text-emerald-400" : "text-red-400")}>
                 {trendUp ? "↗" : "↘"} {trend}
               </p>
             )}
@@ -82,41 +68,23 @@ export function StatCard({
 
   return (
     <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)] h-full flex flex-col min-h-[148px]">
-      {/* En-tête : icône + sparkline */}
       <div className="flex items-start justify-between mb-3">
-        <div
-          className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-lg",
-            c.bg
-          )}
-        >
+        <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", c.bg)}>
           <Icon className={cn("h-4 w-4", c.icon)} />
         </div>
         {sparklineData && sparklineData.length > 1 && (
-          <Sparkline
-            data={sparklineData}
-            color={c.sparkline}
-            width={80}
-            height={32}
-          />
+          <Sparkline data={sparklineData} color={c.sparkline} width={80} height={32} />
         )}
       </div>
-      {/* Label + valeur */}
       <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
         {label}
       </p>
       <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
         {value}
       </p>
-      {/* Trend : espace réservé même si vide */}
       <div className="mt-auto pt-2 h-5">
         {trend && (
-          <p
-            className={cn(
-              "text-xs font-medium",
-              trendUp ? "text-emerald-600" : "text-red-600"
-            )}
-          >
+          <p className={cn("text-xs font-medium", trendUp ? "text-emerald-600" : "text-red-600")}>
             {trendUp ? "↗" : "↘"} {trend}
           </p>
         )}
