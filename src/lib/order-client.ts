@@ -48,6 +48,7 @@ export async function createOrder(payload: {
   supplier_city?: string;
   purchase_price_aed?: number;
   transport_cost_aed?: number;
+  transfer_fee_usd?: number; // Ajouté ici
   sale_price_fcfa: number;
   exchange_rate_aed_to_fcfa: number;
   expected_delivery?: string;

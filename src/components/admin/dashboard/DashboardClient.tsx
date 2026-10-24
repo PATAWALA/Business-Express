@@ -12,15 +12,14 @@ import {
   Plus,
   RefreshCw,
   ArrowRight,
-  Inbox,
   Users,
   CheckCircle2,
+  ArrowDownRight,
 } from "lucide-react";
 import type { Order, Task, Client } from "@/lib/order-client";
 import { formatFCFA } from "@/lib/admin-utils";
 import { StatCard } from "@/components/admin/ui/StatCard";
 import { Button } from "@/components/admin/ui/Button";
-import { PageHelp } from "@/components/admin/ui/PageHelp";
 import { ShareProjectLink } from "@/components/admin/shared/ShareProjectLink";
 import { RevenueChart } from "./RevenueChart";
 import { UrgentTasks } from "./UrgentTasks";
@@ -31,27 +30,31 @@ type OrderWithClient = Order & { clients: Client | null };
 interface Props {
   orders: OrderWithClient[];
   tasks: Task[];
+  usdRate: number;
 }
 
-export function DashboardClient({ orders, tasks }: Props) {
+export function DashboardClient({ orders, tasks, usdRate = 2800 }: Props) {
   const router = useRouter();
 
   const stats = useMemo(() => {
-    const totalRevenue = orders.reduce(
-      (s, o) => s + (o.sale_price_fcfa ?? 0),
-      0
-    );
+    // --- CHIFFRES FINANCIERS ---
+    const totalRevenue = orders.reduce((s, o) => s + (o.sale_price_fcfa ?? 0), 0);
     const totalMargin = orders.reduce((s, o) => s + (o.margin_fcfa ?? 0), 0);
     
-    // Nouveaux calculs
+    // Dépenses (Uniquement ceux qui ont un prix d'achat renseigné)
+    const totalCostAED = orders.reduce((s, o) => s + (o.purchase_price_aed ?? 0) + (o.transport_cost_aed ?? 0), 0);
+    const totalTransferUSD = orders.reduce((s, o) => s + (o.transfer_fee_usd ?? 0), 0);
+    const totalSpent = (totalCostAED * (orders[0]?.exchange_rate_aed_to_fcfa || 762)) + (totalTransferUSD * usdRate);
+
+    // --- STATUTS COMMANDES ---
     const newProspects = orders.filter((o) => o.status === "new").length;
-    const inSourcing = orders.filter((o) => o.status === "sourcing").length;
-    const inTransit = orders.filter((o) => o.status === "freight").length;
+    const inSourcing = orders.filter((o) => o.status === "sourcing" || o.status === "quoted").length;
+    const inTransit = orders.filter((o) => o.status === "freight" || o.status === "purchased").length;
     const delivered = orders.filter((o) => o.status === "delivered").length;
 
-    const marginRate =
-      totalRevenue > 0 ? ((totalMargin / totalRevenue) * 100).toFixed(1) : "0";
+    const marginRate = totalRevenue > 0 ? ((totalMargin / totalRevenue) * 100).toFixed(1) : "0";
 
+    // Sparklines (6 mois)
     const revenueSparkline: number[] = [];
     const marginSparkline: number[] = [];
     for (let i = 5; i >= 0; i--) {
@@ -61,210 +64,128 @@ export function DashboardClient({ orders, tasks }: Props) {
       const monthOrders = orders.filter((o) => {
         if (!o.created_at) return false;
         const od = new Date(o.created_at);
-        return (
-          `${od.getFullYear()}-${String(od.getMonth() + 1).padStart(2, "0")}` ===
-          key
-        );
+        return `${od.getFullYear()}-${String(od.getMonth() + 1).padStart(2, "0")}` === key;
       });
-      revenueSparkline.push(
-        monthOrders.reduce((s, o) => s + (o.sale_price_fcfa ?? 0), 0)
-      );
-      marginSparkline.push(
-        monthOrders.reduce((s, o) => s + (o.margin_fcfa ?? 0), 0)
-      );
+      revenueSparkline.push(monthOrders.reduce((s, o) => s + (o.sale_price_fcfa ?? 0), 0));
+      marginSparkline.push(monthOrders.reduce((s, o) => s + (o.margin_fcfa ?? 0), 0));
     }
 
     return {
-      totalRevenue,
-      totalMargin,
-      newProspects,
-      inSourcing,
-      inTransit,
-      delivered,
-      marginRate,
-      revenueSparkline,
-      marginSparkline,
+      totalRevenue, totalMargin, totalSpent,
+      newProspects, inSourcing, inTransit, delivered,
+      marginRate, revenueSparkline, marginSparkline,
     };
-  }, [orders]);
+  }, [orders, usdRate]);
 
   const today = new Date().toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 
   const pendingTasksCount = tasks.filter((t) => !t.completed).length;
 
   return (
-    <div className="space-y-6">
-      {/* HEADER */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* HEADER ULTRA-ÉPURÉ */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1 capitalize">
-            {today}
-          </div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">
-            Bonjour Prince 👋
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            {pendingTasksCount > 0
-              ? `${pendingTasksCount} tâche${pendingTasksCount > 1 ? "s" : ""} en attente aujourd'hui`
-              : "Tout est à jour, bonne journée !"}
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900">Tableau de bord</h1>
+          <p className="text-sm text-slate-500 mt-1 capitalize">{today}</p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="md"
-            onClick={() => router.refresh()}
-            className="gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            <span className="hidden sm:inline">Actualiser</span>
+          <Button variant="outline" size="sm" onClick={() => router.refresh()} className="bg-white gap-2">
+            <RefreshCw className="h-4 w-4" /> Actualiser
           </Button>
           <Link href="/admin/commandes">
-            <Button variant="primary" size="md" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Nouvelle commande
+            <Button variant="primary" size="sm" className="gap-2">
+              <Plus className="h-4 w-4" /> Nouvelle commande
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* ALERTE ROUGE + AIDE CÔTE À CÔTE */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-        {stats.newProspects > 0 ? (
-          <Link
-            href="/admin/commandes?status=new"
-            className="group relative overflow-hidden flex items-center gap-4 rounded-2xl border-2 border-red-300 bg-gradient-to-r from-red-500 to-red-600 p-5 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:-translate-y-0.5 transition-all"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm text-white shrink-0 animate-pulse">
-              <Inbox className="h-6 w-6" />
+      {/* ALERTE PROSPECTS (Uniquement si nouveaux) */}
+      {stats.newProspects > 0 && (
+        <Link
+          href="/admin/commandes?status=new"
+          className="flex items-center gap-4 rounded-xl border border-red-200 bg-red-50 p-4 hover:bg-red-100 transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white shrink-0 animate-pulse">
+            <AlertCircle className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <div className="text-sm font-bold text-red-900">
+              Action requise : {stats.newProspects} nouveau{stats.newProspects > 1 ? "x" : ""} prospect{stats.newProspects > 1 ? "s" : ""}
             </div>
-            <div className="flex-1">
-              <div className="text-base font-bold text-white">
-                ⚠️ {stats.newProspects} nouvelle{stats.newProspects > 1 ? "s" : ""} demande{stats.newProspects > 1 ? "s" : ""} !
-              </div>
-              <div className="text-sm text-red-100 mt-0.5">
-                Cliquez ici pour traiter les prospects en attente.
-              </div>
-            </div>
-            <ArrowRight className="h-6 w-6 text-white group-hover:translate-x-1 transition-transform" />
-          </Link>
-        ) : (
-          <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm h-full">
-             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400 shrink-0">
-              <CheckCircle2 className="h-6 w-6" />
-            </div>
-            <div>
-              <div className="text-sm font-bold text-slate-700">
-                Aucun prospect en attente
-              </div>
-              <div className="text-xs text-slate-500 mt-0.5">
-                Vous avez traité toutes les demandes.
-              </div>
+            <div className="text-xs text-red-700">
+              Ces clients ont besoin d'un devis. Cliquez pour traiter.
             </div>
           </div>
-        )}
-
-        <PageHelp
-          title="💡 Aide & Statistiques"
-          description="Comprenez votre activité en un clin d'œil"
-          steps={[
-            {
-              label: "Prospects en attente",
-              description: "Ce sont les clients qui ont rempli le formulaire sur votre site. Contactez-les sur WhatsApp !",
-            },
-            {
-              label: "En Sourcing",
-              description: "Vous avez validé le prix. Vous cherchez maintenant la marchandise à Dubaï.",
-            },
-            {
-              label: "En Transit",
-              description: "La marchandise a été achetée et est en route vers l'Afrique.",
-            },
-            {
-              label: "Livré",
-              description: "Le client a reçu sa commande. L'argent est encaissé.",
-            },
-          ]}
-          tips={[
-            "Marge nette = ce que vous gagnez après avoir payé le fournisseur et le transport.",
-            "Partagez votre lien /projet pour avoir plus de prospects.",
-          ]}
-          defaultOpen={false}
-        />
-      </div>
-
-      {/* 4 STAT CARDS (Maintenant plus claires) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link href="/admin/commandes?status=new" className="block">
-          <StatCard
-            label="Prospects en attente"
-            value={`${stats.newProspects} demandes`}
-            icon={Users}
-            color="red"
-          />
+          <ArrowRight className="h-5 w-5 text-red-600" />
         </Link>
-        <Link href="/admin/commandes?status=sourcing" className="block">
+      )}
+
+      {/* --- SECTION 1 : FINANCES --- */}
+      <div>
+        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Vue financière (Tout le temps)</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard
-            label="En Sourcing"
-            value={`${stats.inSourcing} commandes`}
-            icon={AlertCircle}
+            label="Argent Dépensé (Achat + Fret)"
+            value={formatFCFA(stats.totalSpent)}
+            icon={ArrowDownRight}
             color="amber"
+            trend="Investi à Dubaï"
+            trendUp={false}
           />
-        </Link>
-        <Link href="/admin/commandes?status=freight" className="block">
           <StatCard
-            label="En Transit"
-            value={`${stats.inTransit} colis`}
-            icon={Package}
-            color="purple"
-          />
-        </Link>
-        <Link href="/admin/commandes?status=delivered" className="block">
-          <StatCard
-            label="Clients Livrés"
-            value={`${stats.delivered} commandes`}
-            icon={CheckCircle2}
-            color="green"
-          />
-        </Link>
-      </div>
-
-      {/* FINANCES (CA et Marge) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Link href="/admin/finances" className="block">
-          <StatCard
-            label="Chiffre d'affaires total"
+            label="Chiffre d'Affaires Attendu"
             value={formatFCFA(stats.totalRevenue)}
             icon={Wallet}
             color="blue"
             variant="dark"
             sparklineData={stats.revenueSparkline}
           />
-        </Link>
-        <Link href="/admin/finances" className="block">
           <StatCard
-            label="Marge nette totale"
+            label="Votre Bénéfice (Marge)"
             value={formatFCFA(stats.totalMargin)}
             icon={TrendingUp}
             color="green"
             trend={`${stats.marginRate}% du CA`}
             sparklineData={stats.marginSparkline}
           />
-        </Link>
+        </div>
       </div>
 
-      {/* LIEN DE COLLECTE PROJET */}
-      <ShareProjectLink variant="card" />
+      {/* --- SECTION 2 : ÉTAT DES COMMANDES --- */}
+      <div>
+        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">État des commandes</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link href="/admin/commandes?status=new">
+            <StatCard label="Nouveaux prospects" value={`${stats.newProspects}`} icon={Users} color="red" />
+          </Link>
+          <Link href="/admin/commandes?status=sourcing">
+            <StatCard label="En recherche / devis" value={`${stats.inSourcing}`} icon={AlertCircle} color="amber" />
+          </Link>
+          <Link href="/admin/commandes?status=freight">
+            <StatCard label="En transport" value={`${stats.inTransit}`} icon={Package} color="purple" />
+          </Link>
+          <Link href="/admin/commandes?status=delivered">
+            <StatCard label="Livrées (terminées)" value={`${stats.delivered}`} icon={CheckCircle2} color="green" />
+          </Link>
+        </div>
+      </div>
 
-      {/* GRAPHIQUE */}
-      <RevenueChart orders={orders} />
+      {/* GRAPHIQUE ET LIEN */}
+      <div className="grid lg:grid-cols-3 gap-6 pt-4">
+        <div className="lg:col-span-2">
+          <RevenueChart orders={orders} />
+        </div>
+        <div>
+          <ShareProjectLink />
+        </div>
+      </div>
 
-      {/* TÂCHES + COMMANDES */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* TÂCHES ET DERNIÈRES COMMANDES */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
         <UrgentTasks tasks={tasks} />
         <RecentOrders orders={orders} />
       </div>

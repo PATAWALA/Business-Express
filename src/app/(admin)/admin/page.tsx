@@ -10,18 +10,19 @@ type OrderWithClient = Order & { clients: Client | null };
 export default async function AdminDashboard() {
   const supabase = createAdminClient();
 
-  const [{ data: orders }, { data: tasks }] = await Promise.all([
-    supabase
-      .from("orders")
-      .select("*, clients(*)")
-      .order("created_at", { ascending: false }),
+  const [{ data: orders }, { data: tasks }, { data: settings }] = await Promise.all([
+    supabase.from("orders").select("*, clients(*)").order("created_at", { ascending: false }),
     supabase.from("tasks").select("*"),
+    supabase.from("settings").select("exchange_rate_usd_to_fcfa").eq("id", 1).single(),
   ]);
+
+  const usdRate = settings?.exchange_rate_usd_to_fcfa ?? 2800;
 
   return (
     <DashboardClient
       orders={(orders as OrderWithClient[] | null) ?? []}
       tasks={(tasks as Task[] | null) ?? []}
+      usdRate={usdRate}
     />
   );
 }

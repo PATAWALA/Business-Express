@@ -62,6 +62,7 @@ export type Database = {
           quantity: number | null
           purchase_price_aed: number | null
           transport_cost_aed: number | null
+          transfer_fee_usd: number | null
           sale_price_fcfa: number | null
           margin_fcfa: number | null
           status: "new" | "quoted" | "sourcing" | "purchased" | "freight" | "delivered"
@@ -83,6 +84,7 @@ export type Database = {
           quantity?: number | null
           purchase_price_aed?: number | null
           transport_cost_aed?: number | null
+          transfer_fee_usd?: number | null
           sale_price_fcfa?: number | null
           margin_fcfa?: number | null
           status?: "new" | "quoted" | "sourcing" | "purchased" | "freight" | "delivered"
@@ -104,6 +106,7 @@ export type Database = {
           quantity?: number | null
           purchase_price_aed?: number | null
           transport_cost_aed?: number | null
+          transfer_fee_usd?: number | null
           sale_price_fcfa?: number | null
           margin_fcfa?: number | null
           status?: "new" | "quoted" | "sourcing" | "purchased" | "freight" | "delivered"
@@ -129,6 +132,7 @@ export type Database = {
         Row: {
           id: number
           exchange_rate_aed_to_fcfa: number
+          exchange_rate_usd_to_fcfa: number
           updated_at: string | null
           company_name: string | null
           company_email: string | null
@@ -142,6 +146,7 @@ export type Database = {
         Insert: {
           id?: number
           exchange_rate_aed_to_fcfa?: number
+          exchange_rate_usd_to_fcfa?: number
           updated_at?: string | null
           company_name?: string | null
           company_email?: string | null
@@ -155,6 +160,7 @@ export type Database = {
         Update: {
           id?: number
           exchange_rate_aed_to_fcfa?: number
+          exchange_rate_usd_to_fcfa?: number
           updated_at?: string | null
           company_name?: string | null
           company_email?: string | null

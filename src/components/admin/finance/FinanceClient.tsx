@@ -3,21 +3,14 @@
 
 import { useMemo, useState } from "react";
 import {
-  Wallet,
-  TrendingUp,
-  ArrowDownRight,
-  Download,
-  Calendar,
+  Wallet, TrendingUp, ArrowDownRight, Calendar, PackageCheck
 } from "lucide-react";
 import type { Order, Client } from "@/lib/order-client";
-import { formatAED, formatFCFA } from "@/lib/admin-utils";
+import { formatFCFA } from "@/lib/admin-utils";
 import { PageHeader } from "@/components/admin/ui/PageHeader";
-import { PageHelp } from "@/components/admin/ui/PageHelp";
 import { StatCard } from "@/components/admin/ui/StatCard";
 import { StatusBadge } from "@/components/admin/ui/StatusBadge";
-import { Button } from "@/components/admin/ui/Button";
 import { EmptyState } from "@/components/admin/ui/EmptyState";
-import { useToast } from "@/components/admin/ui/ToastProvider";
 import { StatusPieChart } from "./StatusPieChart";
 
 type OrderWithClient = Order & { clients: Client | null };
@@ -26,236 +19,146 @@ type Period = "all" | "month" | "3months";
 interface Props {
   orders: OrderWithClient[];
   exchangeRate: number;
+  usdRate: number;
 }
 
-export function FinanceClient({ orders, exchangeRate }: Props) {
+export function FinanceClient({ orders, exchangeRate, usdRate }: Props) {
   const [period, setPeriod] = useState<Period>("all");
-  const toast = useToast();
 
   const filtered = useMemo(() => {
     if (period === "all") return orders;
     const now = Date.now();
     const limit = period === "month" ? 30 : 90;
-    return orders.filter((o) => {
-      if (!o.created_at) return false;
-      return now - new Date(o.created_at).getTime() <= limit * 86400000;
-    });
+    return orders.filter((o) => o.created_at && now - new Date(o.created_at).getTime() <= limit * 86400000);
   }, [orders, period]);
 
   const stats = useMemo(() => {
-    const totalRevenue = filtered.reduce(
-      (s, o) => s + (o.sale_price_fcfa ?? 0),
-      0
-    );
+    const totalRevenue = filtered.reduce((s, o) => s + (o.sale_price_fcfa ?? 0), 0);
     const totalMargin = filtered.reduce((s, o) => s + (o.margin_fcfa ?? 0), 0);
-    const totalPurchase = filtered.reduce(
-      (s, o) => s + (o.purchase_price_aed ?? 0),
-      0
-    );
-    const totalTransport = filtered.reduce(
-      (s, o) => s + (o.transport_cost_aed ?? 0),
-      0
-    );
-    const totalCostAED = totalPurchase + totalTransport;
-    const totalCostFCFA = totalCostAED * exchangeRate;
-    const marginRate =
-      totalRevenue > 0 ? ((totalMargin / totalRevenue) * 100).toFixed(1) : "0";
+    
+    const totalCostAED = filtered.reduce((s, o) => s + (o.purchase_price_aed ?? 0) + (o.transport_cost_aed ?? 0), 0);
+    const totalTransferUSD = filtered.reduce((s, o) => s + (o.transfer_fee_usd ?? 0), 0);
+    const totalSpent = (totalCostAED * exchangeRate) + (totalTransferUSD * usdRate);
 
-    return {
-      totalRevenue,
-      totalMargin,
-      totalCostAED,
-      totalCostFCFA,
-      marginRate,
-    };
-  }, [filtered, exchangeRate]);
+    // Réel (Uniquement les livrés)
+    const deliveredOrders = filtered.filter(o => o.status === "delivered");
+    const realizedRevenue = deliveredOrders.reduce((s, o) => s + (o.sale_price_fcfa ?? 0), 0);
+    const realizedMargin = deliveredOrders.reduce((s, o) => s + (o.margin_fcfa ?? 0), 0);
 
-  function exportCSV() {
-    const rows = [
-      [
-        "Réf",
-        "Client",
-        "Article",
-        "Statut",
-        "Achat (AED)",
-        "Transport (AED)",
-        "Vente (FCFA)",
-        "Marge (FCFA)",
-        "Date",
-      ],
-      ...filtered.map((o) => [
-        o.order_ref,
-        o.clients?.name ?? "",
-        o.items_description,
-        o.status,
-        o.purchase_price_aed ?? 0,
-        o.transport_cost_aed ?? 0,
-        o.sale_price_fcfa ?? 0,
-        o.margin_fcfa ?? 0,
-        o.created_at ? new Date(o.created_at).toLocaleDateString("fr-FR") : "",
-      ]),
-    ];
-    const csv = rows
-      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob(["\uFEFF" + csv], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `business-express-finances-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Export CSV téléchargé ✅");
-  }
+    return { totalSpent, totalRevenue, totalMargin, realizedRevenue, realizedMargin };
+  }, [filtered, exchangeRate, usdRate]);
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
-        title="Trésorerie & Marges"
-        subtitle={`${filtered.length} commandes · Taux 1 AED = ${exchangeRate} FCFA`}
+        title="Finances"
+        subtitle="Suivi de votre trésorerie en temps réel"
         action={
-          <Button
-            variant="outline"
-            onClick={exportCSV}
-            className="gap-2"
-            disabled={filtered.length === 0}
-          >
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Export CSV</span>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                { key: "all", label: "Tout le temps" },
+                { key: "month", label: "Ce mois-ci" },
+                { key: "3months", label: "3 derniers mois" },
+              ] as const
+            ).map((opt) => {
+              const isActive = period === opt.key;
+              return (
+                <button
+                  key={opt.key}
+                  onClick={() => setPeriod(opt.key)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    isActive ? "bg-slate-900 text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  <Calendar className="h-3 w-3" />
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         }
       />
 
-      <div className="mb-4">
-        <PageHelp
-          title="💰 Où en est votre argent ?"
-          description="Comprenez en 10 secondes combien vous gagnez avec votre business."
-          steps={[
-            {
-              label: "Chiffre d'affaires",
-              description:
-                "C'est l'argent TOTAL de toutes vos ventes. Si vous vendez 10 téléphones à 1 million, ça fait 10 millions.",
-            },
-            {
-              label: "Marge nette (Votre bénéfice)",
-              description:
-                "C'est ce qui vous reste dans la poche après avoir payé l'achat chez le fournisseur et le transport. C'est VOTRE argent.",
-            },
-            {
-              label: "Argent engagé",
-              description:
-                "C'est l'argent que vous avez déjà dépensé à Dubaï pour acheter la marchandise (et qui va vous rapporter plus tard).",
-            },
-          ]}
-          tips={[
-            "Changez la période (30 jours, 90 jours) pour voir si vous vendez plus ce mois-ci que le mois dernier.",
-            "Si votre marge est négative (en rouge), c'est que vous vendez à perte. Vérifiez vite votre prix d'achat !",
-            "Téléchargez le tableau (Export CSV) pour l'envoyer à votre comptable.",
-          ]}
-        />
-      </div>
-
-      <div className="flex flex-wrap gap-2 mb-6">
-        {(
-          [
-            { key: "all", label: "Tout" },
-            { key: "month", label: "30 derniers jours" },
-            { key: "3months", label: "90 derniers jours" },
-          ] as const
-        ).map((opt) => {
-          const isActive = period === opt.key;
-          return (
-            <button
-              key={opt.key}
-              onClick={() => setPeriod(opt.key)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                isActive
-                  ? "bg-slate-900 text-white shadow-sm"
-                  : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              <Calendar className="h-3 w-3" />
-              {opt.label}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      {/* 4 CARTES FINANCIÈRES ULTRA-CLAIRES */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Chiffre d'affaires"
+          label="Argent Dépensé"
+          value={formatFCFA(stats.totalSpent)}
+          icon={ArrowDownRight}
+          color="amber"
+          trend="Achat + Transport + Transfert"
+          trendUp={false}
+        />
+        <StatCard
+          label="Prix Total Attendu"
           value={formatFCFA(stats.totalRevenue)}
           icon={Wallet}
           color="blue"
-          variant="dark"
+          trend="Ce que les clients doivent payer"
         />
         <StatCard
-          label="Marge nette"
+          label="Bénéfice Prévu"
           value={formatFCFA(stats.totalMargin)}
           icon={TrendingUp}
           color="green"
-          trend={`${stats.marginRate}% du CA`}
+          trend="Vos frais de service"
         />
         <StatCard
-          label="Argent engagé"
-          value={formatAED(stats.totalCostAED)}
-          icon={ArrowDownRight}
-          color="amber"
-          trend={`≈ ${formatFCFA(stats.totalCostFCFA)}`}
-          trendUp={false}
+          label="Argent Encaissé (Livré)"
+          value={formatFCFA(stats.realizedRevenue)}
+          icon={PackageCheck}
+          color="purple"
+          variant="dark"
+          trend={`+${formatFCFA(stats.realizedMargin)} de bénéfice`}
         />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid lg:grid-cols-3 gap-6 pt-4">
         <StatusPieChart orders={filtered} />
 
-        <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
+        <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-200">
-            <h2 className="font-bold text-slate-900">Détail financier</h2>
-            <p className="text-xs text-slate-500">
-              Toutes les commandes de la période
-            </p>
+            <h2 className="font-bold text-slate-900">Détail par commande</h2>
+            <p className="text-xs text-slate-500">Le vrai coût et la vraie marge de chaque opération</p>
           </div>
           {filtered.length === 0 ? (
-            <EmptyState
-              icon={Wallet}
-              title="Aucune commande sur cette période"
-              description="Essayez d'élargir la période."
-            />
+            <EmptyState icon={Wallet} title="Aucune commande" description="Créez une commande pour voir les détails." />
           ) : (
-            <div className="overflow-x-auto max-h-[380px]">
+            <div className="overflow-x-auto max-h-[400px]">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-xs text-slate-600 uppercase font-semibold sticky top-0">
                   <tr className="text-left">
-                    <th className="px-4 py-3">Réf.</th>
                     <th className="px-4 py-3">Client</th>
+                    <th className="px-4 py-3 text-right">Dépenses</th>
+                    <th className="px-4 py-3 text-right">Prix Client</th>
+                    <th className="px-4 py-3 text-right">Bénéfice</th>
                     <th className="px-4 py-3">Statut</th>
-                    <th className="px-4 py-3 text-right">Vente</th>
-                    <th className="px-4 py-3 text-right">Marge</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filtered.map((o) => (
-                    <tr key={o.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 font-mono text-xs font-bold">
-                        {o.order_ref}
-                      </td>
-                      <td className="px-4 py-3 text-slate-700 text-sm">
-                        {o.clients?.name ?? "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={o.status} />
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold text-slate-900">
-                        {formatFCFA(o.sale_price_fcfa)}
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold text-emerald-600">
-                        {formatFCFA(o.margin_fcfa)}
-                      </td>
-                    </tr>
-                  ))}
+                  {filtered.map((o) => {
+                    const costAed = (o.purchase_price_aed ?? 0) + (o.transport_cost_aed ?? 0);
+                    const costFcfa = (costAed * exchangeRate) + ((o.transfer_fee_usd ?? 0) * usdRate);
+                    return (
+                      <tr key={o.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3">
+                          <div className="font-semibold text-slate-900">{o.clients?.name ?? "—"}</div>
+                          <div className="text-[10px] font-mono text-slate-500">{o.order_ref}</div>
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold text-red-500">
+                          {costFcfa > 0 ? `-${formatFCFA(costFcfa)}` : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold text-slate-900">
+                          {o.sale_price_fcfa ? formatFCFA(o.sale_price_fcfa) : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-right font-bold text-emerald-600">
+                          {o.margin_fcfa ? `+${formatFCFA(o.margin_fcfa)}` : "—"}
+                        </td>
+                        <td className="px-4 py-3"><StatusBadge status={o.status} /></td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
