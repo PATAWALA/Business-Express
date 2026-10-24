@@ -3,18 +3,13 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Plus, ChevronLeft, ChevronRight, Package, RefreshCw, Calendar, Wallet,
-  AlertCircle, ArrowRight, Truck, CheckCircle2, Zap, Loader2, User
-} from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Package, RefreshCw } from "lucide-react";
 import type { Order, Client } from "@/lib/order-client";
 import { updateOrderStatus } from "@/lib/order-client";
-import { formatFCFA, formatDate } from "@/lib/admin-utils";
 import { PageHeader } from "@/components/admin/ui/PageHeader";
 import { Button } from "@/components/admin/ui/Button";
-import { Avatar } from "@/components/admin/ui/Avatar";
-import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { EmptyState } from "@/components/admin/ui/EmptyState";
+import { OrderCard } from "./OrderCard";
 import { OrdersFilters } from "./OrdersFilters";
 import { NewOrderModal } from "./NewOrderModal";
 import { OrderDetailModal } from "./OrderDetailModal";
@@ -28,7 +23,7 @@ interface Props {
   usdRate: number;
 }
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 12;
 
 export function OrdersTable({ initialOrders, usdRate }: Props) {
   const router = useRouter();
@@ -105,7 +100,7 @@ export function OrdersTable({ initialOrders, usdRate }: Props) {
     <div>
       <PageHeader
         title="Commandes & Devis"
-        subtitle="Cliquez sur 'Calculer le devis' pour traiter un nouveau prospect."
+        subtitle="Suivez chaque commande et calculez vos devis."
         action={
           <div className="flex gap-2">
             <Button variant="outline" size="md" onClick={refresh} className="gap-2 bg-white">
@@ -120,112 +115,36 @@ export function OrdersTable({ initialOrders, usdRate }: Props) {
         }
       />
 
-      <OrdersFilters search={search} onSearchChange={(v) => { setSearch(v); setPage(1); }} filter={filter} onFilterChange={(v) => { setFilter(v); setPage(1); }} counts={counts as any} />
+      <OrdersFilters 
+        search={search} 
+        onSearchChange={(v) => { setSearch(v); setPage(1); }} 
+        filter={filter} 
+        onFilterChange={(v) => { setFilter(v); setPage(1); }} 
+        counts={counts as any} 
+      />
 
-      <div className="space-y-4">
-        {filtered.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white">
-            <EmptyState icon={Package} title="Aucune commande" description="Vous n'avez pas encore de commande correspondant à ce filtre." />
-          </div>
-        ) : (
-          paginated.map((order) => {
-            const isNew = order.status === "new";
-            const hasPrice = !!order.sale_price_fcfa && order.sale_price_fcfa > 0;
-            const isLoading = loadingStatus === order.id;
+      {/* GRILLE DE CARTES */}
+      {filtered.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-white">
+          <EmptyState icon={Package} title="Aucune commande" description="Vous n'avez pas encore de commande correspondant à ce filtre." />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {paginated.map((order) => (
+            <OrderCard
+              key={order.id}
+              order={order}
+              isLoading={loadingStatus === order.id}
+              onAdvanceStatus={() => advanceStatus(order)}
+              onOpenDetails={() => setDetailOrder(order)}
+            />
+          ))}
+        </div>
+      )}
 
-            let actionLabel = "Gérer";
-            let actionIcon = ArrowRight;
-            let actionColor = "bg-blue-600 text-white hover:bg-blue-700";
-            let showAction = true;
-
-            if (isNew) {
-              actionLabel = "Calculer le devis";
-              actionIcon = Zap;
-              actionColor = "bg-red-600 text-white hover:bg-red-700 shadow-md shadow-red-500/30";
-            } else if (order.status === "quoted") {
-              actionLabel = "Valider (Client OK)";
-              actionIcon = CheckCircle2;
-              actionColor = "bg-blue-600 text-white hover:bg-blue-700";
-            } else if (order.status === "sourcing") {
-              actionLabel = "Marquer comme Acheté";
-              actionIcon = CheckCircle2;
-              actionColor = "bg-orange-500 text-white hover:bg-orange-600";
-            } else if (order.status === "purchased") {
-              actionLabel = "Marquer en Transport";
-              actionIcon = Truck;
-              actionColor = "bg-indigo-600 text-white hover:bg-indigo-700";
-            } else if (order.status === "freight") {
-              actionLabel = "Marquer comme Livré";
-              actionIcon = CheckCircle2;
-              actionColor = "bg-emerald-600 text-white hover:bg-emerald-700";
-            } else if (order.status === "delivered") {
-              showAction = false;
-            }
-
-            const ActionIcon = actionIcon;
-
-            return (
-              <div key={order.id} className={`relative rounded-2xl border transition-all flex flex-col md:flex-row md:items-center gap-4 p-5 ${isNew ? "border-red-300 bg-red-50/40 shadow-sm" : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-md"}`}>
-                
-                <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl ${
-                  isNew ? "bg-red-500" : order.status === "delivered" ? "bg-emerald-500" : order.status === "freight" ? "bg-indigo-500" : "bg-blue-500"
-                }`} />
-
-                <div className="flex items-center gap-3 md:w-1/4 shrink-0 pl-2">
-                  <Avatar name={order.clients?.name ?? "?"} size="md" />
-                  <div className="min-w-0">
-                    <div className="font-bold text-slate-900 truncate">{order.clients?.name ?? "Client inconnu"}</div>
-                    <div className="text-xs text-slate-500 font-mono mt-0.5">{order.order_ref}</div>
-                  </div>
-                </div>
-
-                <div className="flex-1 md:w-1/4">
-                  <div className="text-sm font-semibold text-slate-800 line-clamp-2">{order.items_description}</div>
-                  <div className="text-xs text-slate-500 mt-1">{formatDate(order.created_at)}</div>
-                </div>
-
-                <div className="flex items-center justify-between md:justify-end gap-6 md:w-1/4 mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
-                  <div className="text-left md:text-right">
-                    <div className="text-[10px] uppercase font-bold text-slate-400">Prix Client</div>
-                    {hasPrice ? (
-                      <div className="font-bold text-blue-600">{formatFCFA(order.sale_price_fcfa)}</div>
-                    ) : (
-                      <div className="font-semibold text-amber-600 flex items-center gap-1 md:justify-end"><AlertCircle className="h-3 w-3" /> À calculer</div>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] uppercase font-bold text-emerald-600">Votre Marge</div>
-                    <div className="font-bold text-emerald-600">{hasPrice ? formatFCFA(order.margin_fcfa) : "—"}</div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 mt-2 md:mt-0" onClick={(e) => e.stopPropagation()}>
-                  <StatusBadge status={order.status} />
-                  
-                  {showAction && (
-                    <Button
-                      size="md"
-                      disabled={isLoading}
-                      onClick={() => isNew ? setDetailOrder(order) : advanceStatus(order)}
-                      className={`gap-2 px-4 ${actionColor}`}
-                    >
-                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ActionIcon className="h-4 w-4" />}
-                      {actionLabel}
-                    </Button>
-                  )}
-
-                  <Button variant="outline" size="md" onClick={() => setDetailOrder(order)} className="px-3" title="Voir les détails">
-                    <User className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 mt-4 border border-slate-200 rounded-xl bg-white">
+        <div className="flex items-center justify-between px-4 py-3 mt-6 border border-slate-200 rounded-xl bg-white">
           <div className="text-xs text-slate-500">{pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filtered.length)} sur {filtered.length}</div>
           <div className="flex items-center gap-1">
             <button onClick={() => setPage(safePage - 1)} disabled={safePage === 1} className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40"><ChevronLeft className="h-4 w-4" /></button>
