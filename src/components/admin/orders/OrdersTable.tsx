@@ -15,7 +15,6 @@ import { Button } from "@/components/admin/ui/Button";
 import { Avatar } from "@/components/admin/ui/Avatar";
 import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { EmptyState } from "@/components/admin/ui/EmptyState";
-import { ShareProjectLink } from "@/components/admin/shared/ShareProjectLink";
 import { OrdersFilters } from "./OrdersFilters";
 import { NewOrderModal } from "./NewOrderModal";
 import { OrderDetailModal } from "./OrderDetailModal";
@@ -120,10 +119,6 @@ export function OrdersTable({ initialOrders, usdRate }: Props) {
           </div>
         }
       />
-
-      <div className="mb-6">
-        <ShareProjectLink />
-      </div>
 
       <OrdersFilters search={search} onSearchChange={(v) => { setSearch(v); setPage(1); }} filter={filter} onFilterChange={(v) => { setFilter(v); setPage(1); }} counts={counts as any} />
 
