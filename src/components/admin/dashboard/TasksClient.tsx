@@ -10,6 +10,8 @@ import { Button } from "@/components/admin/ui/Button";
 import { EmptyState } from "@/components/admin/ui/EmptyState";
 import { TaskCard } from "./TaskCard";
 import { NewTaskModal } from "./NewTaskModal";
+import { useToast } from "@/components/admin/ui/ToastProvider";
+import { useRouter } from "next/navigation";
 
 interface Props {
   tasks: Task[];
@@ -26,6 +28,8 @@ const priorityOrder: Record<string, number> = {
 };
 
 export function TasksClient({ tasks }: Props) {
+  const router = useRouter();
+  const toast = useToast();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
@@ -95,27 +99,11 @@ export function TasksClient({ tasks }: Props) {
           title="✅ Ne perdez plus le fil"
           description="Votre carnet de notes intelligent pour ne rien oublier à Dubaï."
           steps={[
-            {
-              label: "1. Ajoutez vos tâches",
-              description:
-                "Cliquez sur '+ Nouvelle tâche' pour noter tout ce que vous devez faire (ex: payer le fournisseur, appeler le transporteur).",
-            },
-            {
-              label: "2. Cochez ce qui est fait",
-              description:
-                "Cliquez sur le cercle pour barrer une tâche. Elle disparaît de votre vue principale et va dans 'Terminées'.",
-            },
-            {
-              label: "3. Laissez le système travailler",
-              description:
-                "Quand vous créez une commande, le système ajoute automatiquement les tâches importantes (ex: contacter le fournisseur).",
-            },
+            { label: "1. Ajoutez vos tâches", description: "Cliquez sur '+ Nouvelle tâche' pour noter tout ce que vous devez faire." },
+            { label: "2. Cochez ce qui est fait", description: "Cliquez sur le cercle pour barrer une tâche." },
+            { label: "3. Laissez le système travailler", description: "Quand vous créez une commande, le système ajoute automatiquement les tâches importantes." },
           ]}
-          tips={[
-            "Une tâche en rouge = urgent, à faire aujourd'hui. En orange = à faire cette semaine.",
-            "Les tâches les plus urgentes s'affichent aussi sur votre tableau de bord principal.",
-            "Les tâches en retard deviennent rouges pour attirer votre attention.",
-          ]}
+          tips={["Une tâche en rouge = urgent. En orange = à faire cette semaine."]}
         />
       </div>
 
@@ -155,17 +143,11 @@ export function TasksClient({ tasks }: Props) {
               key={opt.key}
               onClick={() => setStatusFilter(opt.key)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                isActive
-                  ? `${opt.color} shadow-sm`
-                  : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                isActive ? `${opt.color} shadow-sm` : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
               }`}
             >
               {opt.label}
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                  isActive ? "bg-white/20" : "bg-slate-100 text-slate-500"
-                }`}
-              >
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20" : "bg-slate-100 text-slate-500"}`}>
                 {counts[opt.key]}
               </span>
             </button>
@@ -189,9 +171,7 @@ export function TasksClient({ tasks }: Props) {
               key={opt.key}
               onClick={() => setPriorityFilter(opt.key)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                isActive
-                  ? "bg-slate-900 text-white shadow-sm"
-                  : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                isActive ? "bg-slate-900 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
               }`}
             >
               {opt.label}
@@ -204,29 +184,13 @@ export function TasksClient({ tasks }: Props) {
         <div className="rounded-2xl border border-slate-200 bg-white">
           <EmptyState
             icon={ListTodo}
-            title={
-              search || priorityFilter !== "all"
-                ? "Aucun résultat"
-                : statusFilter === "done"
-                ? "Aucune tâche terminée"
-                : statusFilter === "pending"
-                ? "Aucune tâche en attente 🎉"
-                : "Aucune tâche"
-            }
-            description={
-              search || priorityFilter !== "all"
-                ? "Essayez d'ajuster votre recherche ou vos filtres."
-                : statusFilter === "pending"
-                ? "Tout est à jour !"
-                : "Créez votre première tâche pour commencer."
-            }
+            title="Aucune tâche"
+            description="Créez votre première tâche pour commencer."
             action={
-              statusFilter !== "done" && !search && priorityFilter === "all" ? (
-                <Button onClick={() => setNewOpen(true)} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Nouvelle tâche
-                </Button>
-              ) : undefined
+              <Button onClick={() => setNewOpen(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Nouvelle tâche
+              </Button>
             }
           />
         </div>
