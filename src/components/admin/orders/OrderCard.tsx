@@ -57,15 +57,10 @@ export function OrderCard({ order, isLoading, onAdvanceStatus, onOpenDetails }: 
   return (
     <div className={`relative rounded-2xl border transition-all flex flex-col p-5 ${
       isNew 
-        ? "border-red-300 bg-red-50/30 shadow-[0_4px_20px_rgba(239,68,68,0.08)]" 
-        : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-md"
+        ? "border-red-200 bg-red-50/20 shadow-sm" 
+        : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md"
     }`}>
       
-      {/* Indicateur de statut à gauche */}
-      <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl ${
-        isNew ? "bg-red-500" : order.status === "delivered" ? "bg-emerald-500" : order.status === "freight" ? "bg-indigo-500" : "bg-blue-500"
-      }`} />
-
       {/* 1. En-tête : Client + Référence */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -92,7 +87,7 @@ export function OrderCard({ order, isLoading, onAdvanceStatus, onOpenDetails }: 
         <div className="bg-white rounded-lg p-3 border border-slate-100">
           <div className="text-[10px] uppercase font-bold text-slate-400">Prix Client</div>
           {hasPrice ? (
-            <div className="font-bold text-blue-600">{formatFCFA(order.sale_price_fcfa)}</div>
+            <div className="font-bold text-slate-900">{formatFCFA(order.sale_price_fcfa)}</div>
           ) : (
             <div className="font-semibold text-amber-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" /> À calculer</div>
           )}
