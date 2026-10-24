@@ -2,9 +2,13 @@
 import type { Tables } from "@/lib/supabase/database.types";
 
 export type Client = Tables<"clients">;
-export type Order = Tables<"orders">;
 export type Settings = Tables<"settings">;
 export type Task = Tables<"tasks">;
+
+export type Order = Omit<Tables<"orders">, "status"> & {
+  status: "new" | "quoted" | "sourcing" | "purchased" | "freight" | "delivered";
+  project_type?: string | null;
+};
 
 export async function fetchClients(): Promise<Client[]> {
   const res = await fetch("/api/clients", { cache: "no-store" });
@@ -50,6 +54,7 @@ export async function createOrder(payload: {
   source?: "public" | "whatsapp" | "manual";
   source_detail?: string;
   status?: string;
+  project_type?: string | null;
 }): Promise<Order> {
   const res = await fetch("/api/orders", {
     method: "POST",
@@ -63,7 +68,7 @@ export async function createOrder(payload: {
 
 export async function updateOrderStatus(
   orderId: string,
-  status: "sourcing" | "purchased" | "freight" | "delivered"
+  status: "new" | "quoted" | "sourcing" | "purchased" | "freight" | "delivered"
 ): Promise<void> {
   const res = await fetch(`/api/orders/${orderId}/status`, {
     method: "PATCH",

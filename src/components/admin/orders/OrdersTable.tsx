@@ -20,7 +20,7 @@ import { PageHelp } from "@/components/admin/ui/PageHelp";
 import { Button } from "@/components/admin/ui/Button";
 import { Avatar } from "@/components/admin/ui/Avatar";
 import { EmptyState } from "@/components/admin/ui/EmptyState";
-import { ShareOrderLink } from "@/components/admin/shared/ShareOrderLink";
+import { ShareProjectLink } from "@/components/admin/shared/ShareProjectLink";
 import { OrdersFilters } from "./OrdersFilters";
 import { StatusDropdown } from "./StatusDropdown";
 import { NewOrderModal } from "./NewOrderModal";
@@ -61,6 +61,8 @@ export function OrdersTable({ initialOrders }: Props) {
   const counts = useMemo(
     () => ({
       all: orders.length,
+      new: orders.filter((o) => o.status === "new").length,
+      quoted: orders.filter((o) => o.status === "quoted").length,
       sourcing: orders.filter((o) => o.status === "sourcing").length,
       purchased: orders.filter((o) => o.status === "purchased").length,
       freight: orders.filter((o) => o.status === "freight").length,
@@ -103,9 +105,8 @@ export function OrdersTable({ initialOrders }: Props) {
   const paginated = filtered.slice(pageStart, pageStart + PAGE_SIZE);
 
   function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortDir(sortDir === "asc" ? "desc" : "asc");
-    } else {
+    if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else {
       setSortKey(key);
       setSortDir("desc");
     }
@@ -158,39 +159,39 @@ export function OrdersTable({ initialOrders }: Props) {
       <div className="mb-4">
         <PageHelp
           title="📦 Gérez vos importations de A à Z"
-          description="De l'achat à Dubaï jusqu'à la livraison au client"
+          description="De la demande du client jusqu'à la livraison"
           steps={[
             {
-              label: "1. Enregistrez la commande",
+              label: "1. Réceptionnez la demande",
               description:
-                "Soit en cliquant sur '+ Nouvelle commande' si le client est devant vous, soit en lui envoyant votre lien de commande pour qu'il le fasse lui-même.",
+                "Si un client remplit le formulaire sur votre site, sa demande arrive ici avec le statut 'Nouveau'. Cliquez dessus pour voir les détails.",
             },
             {
-              label: "2. Remplissez les coûts",
+              label: "2. Contactez et chiffrez",
               description:
-                "Indiquez le prix d'achat chez le fournisseur et les frais de transport. Le système calcule automatiquement votre bénéfice (marge).",
+                "Contactez le client sur WhatsApp. Une fois d'accord, cliquez sur 'Modifier' pour saisir le prix de vente et passer la commande en 'Sourcing'.",
             },
             {
               label: "3. Suivez l'avancée",
               description:
-                "Cliquez sur le badge de statut pour faire avancer la commande : Sourcing (recherche) → Acheté → En fret (transport) → Livré.",
+                "Faites avancer la commande : Sourcing (recherche) → Acheté → En fret (transport) → Livré.",
             },
             {
-              label: "4. Complétez plus tard",
+              label: "4. Remplissez les coûts",
               description:
-                "Vous ne connaissez pas encore le prix d'achat exact ? Laissez vide. Ouvrez la commande plus tard pour le remplir.",
+                "Indiquez le prix d'achat chez le fournisseur et le transport. Votre bénéfice (marge) se calcule automatiquement.",
             },
           ]}
           tips={[
-            "Tapez le nom d'un client dans la barre de recherche pour retrouver toutes ses commandes d'un coup.",
-            "Les filtres en haut (Sourcing, Acheté, etc.) vous aident à voir ce qui est en route.",
+            "Utilisez la recherche pour retrouver un client ou une commande.",
+            "Envoyez le lien du formulaire à vos prospects pour qu'ils remplissent eux-mêmes leurs demandes.",
             "Cliquez sur n'importe quelle ligne pour voir les détails ou modifier.",
           ]}
         />
       </div>
 
       <div className="mb-4">
-        <ShareOrderLink />
+        <ShareProjectLink />
       </div>
 
       <OrdersFilters
@@ -204,7 +205,7 @@ export function OrdersTable({ initialOrders }: Props) {
           setFilter(v);
           setPage(1);
         }}
-        counts={counts}
+        counts={counts as any}
       />
 
       <div className="rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
@@ -285,7 +286,9 @@ export function OrdersTable({ initialOrders }: Props) {
                         {order.items_description}
                       </td>
                       <td className="px-4 py-3 text-right font-semibold text-slate-900">
-                        {formatFCFA(order.sale_price_fcfa)}
+                        {order.sale_price_fcfa
+                          ? formatFCFA(order.sale_price_fcfa)
+                          : "—"}
                       </td>
                       <td className="px-4 py-3 text-right font-semibold text-emerald-600">
                         {formatFCFA(order.margin_fcfa)}
@@ -342,7 +345,10 @@ export function OrdersTable({ initialOrders }: Props) {
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-500">
-                      Vente : {formatFCFA(order.sale_price_fcfa)}
+                      Vente :{" "}
+                      {order.sale_price_fcfa
+                        ? formatFCFA(order.sale_price_fcfa)
+                        : "—"}
                     </span>
                     <span className="font-semibold text-emerald-600">
                       Marge : {formatFCFA(order.margin_fcfa)}

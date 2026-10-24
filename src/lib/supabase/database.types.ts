@@ -64,11 +64,12 @@ export type Database = {
           transport_cost_aed: number | null
           sale_price_fcfa: number | null
           margin_fcfa: number | null
-          status: "sourcing" | "purchased" | "freight" | "delivered"
+          status: "new" | "quoted" | "sourcing" | "purchased" | "freight" | "delivered"
           expected_delivery: string | null
           source: "public" | "whatsapp" | "manual"
           source_detail: string | null
           exchange_rate_aed_to_fcfa: number
+          project_type: string | null
           created_at: string | null
           updated_at: string | null
         }
@@ -84,11 +85,12 @@ export type Database = {
           transport_cost_aed?: number | null
           sale_price_fcfa?: number | null
           margin_fcfa?: number | null
-          status?: "sourcing" | "purchased" | "freight" | "delivered"
+          status?: "new" | "quoted" | "sourcing" | "purchased" | "freight" | "delivered"
           expected_delivery?: string | null
           source?: "public" | "whatsapp" | "manual"
           source_detail?: string | null
           exchange_rate_aed_to_fcfa?: number
+          project_type?: string | null
           created_at?: string | null
           updated_at?: string | null
         }
@@ -104,70 +106,18 @@ export type Database = {
           transport_cost_aed?: number | null
           sale_price_fcfa?: number | null
           margin_fcfa?: number | null
-          status?: "sourcing" | "purchased" | "freight" | "delivered"
+          status?: "new" | "quoted" | "sourcing" | "purchased" | "freight" | "delivered"
           expected_delivery?: string | null
           source?: "public" | "whatsapp" | "manual"
           source_detail?: string | null
           exchange_rate_aed_to_fcfa?: number
+          project_type?: string | null
           created_at?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "orders_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      project_requests: {
-        Row: {
-          id: string
-          client_id: string | null
-          full_name: string
-          whatsapp: string
-          city: string
-          project_type: string | null
-          budget: string | null
-          description: string
-          status: "new" | "contacted" | "quoted" | "converted" | "archived"
-          notes: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          client_id?: string | null
-          full_name: string
-          whatsapp: string
-          city: string
-          project_type?: string | null
-          budget?: string | null
-          description: string
-          status?: "new" | "contacted" | "quoted" | "converted" | "archived"
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          client_id?: string | null
-          full_name?: string
-          whatsapp?: string
-          city?: string
-          project_type?: string | null
-          budget?: string | null
-          description?: string
-          status?: "new" | "contacted" | "quoted" | "converted" | "archived"
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "project_requests_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"

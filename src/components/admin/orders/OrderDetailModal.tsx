@@ -8,14 +8,16 @@ import {
   Save,
   MessageCircle,
   MapPin,
-  Package,
   TrendingUp,
   Trash2,
+  FileText,
+  Send,
 } from "lucide-react";
 import { type Order, type Client, updateOrder } from "@/lib/order-client";
 import { formatAED, formatFCFA, formatDate } from "@/lib/admin-utils";
 import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { computeMarginFcfa } from "@/lib/order-utils";
+import { useToast } from "@/components/admin/ui/ToastProvider";
 
 interface Props {
   order: (Order & { clients: Client | null }) | null;
@@ -24,11 +26,14 @@ interface Props {
 }
 
 export function OrderDetailModal({ order, onClose, onSaved }: Props) {
+  const toast = useToast();
   const [editMode, setEditMode] = useState(false);
   const [purchaseAed, setPurchaseAed] = useState("");
   const [transportAed, setTransportAed] = useState("");
   const [supplierName, setSupplierName] = useState("");
   const [supplierCity, setSupplierCity] = useState("");
+  const [saleFcfa, setSaleFcfa] = useState("");
+  const [status, setStatus] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -39,6 +44,8 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
       setTransportAed(order.transport_cost_aed?.toString() ?? "");
       setSupplierName(order.supplier_name ?? "");
       setSupplierCity(order.supplier_city ?? "");
+      setSaleFcfa(order.sale_price_fcfa?.toString() ?? "");
+      setStatus(order.status);
       setEditMode(false);
       setError(null);
     }
@@ -46,15 +53,22 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
 
   if (!order) return null;
   const currentOrder = order;
+  const isNewRequest = currentOrder.status === "new";
 
   const liveMargin = computeMarginFcfa(
     purchaseAed ? parseFloat(purchaseAed) : 0,
     transportAed ? parseFloat(transportAed) : 0,
-    currentOrder.sale_price_fcfa ?? 0,
+    saleFcfa ? parseInt(saleFcfa) : 0,
     currentOrder.exchange_rate_aed_to_fcfa
   );
 
-  async function handleSave() {
+  async function handleSave(newStatus?: string) {
+    const targetStatus = newStatus || status;
+    if (targetStatus !== "new" && !saleFcfa) {
+      toast.error("Veuillez saisir un prix de vente avant de valider.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -63,7 +77,10 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
         supplier_city: supplierCity || null,
         purchase_price_aed: purchaseAed ? parseFloat(purchaseAed) : 0,
         transport_cost_aed: transportAed ? parseFloat(transportAed) : 0,
+        sale_price_fcfa: saleFcfa ? parseInt(saleFcfa) : null,
+        status: targetStatus,
       });
+      toast.success("Commande mise à jour ✅");
       onSaved();
       onClose();
     } catch (e: any) {
@@ -79,18 +96,14 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
       return;
     }
     if (!confirm(`Supprimer définitivement ${currentOrder.order_ref} ?`)) return;
-
     setDeleting(true);
     try {
-      const res = await fetch(`/api/orders/${currentOrder.id}/delete`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erreur");
+      await fetch(`/api/orders/${currentOrder.id}/delete`, { method: "DELETE" });
+      toast.success("Commande supprimée");
       onSaved();
       onClose();
-    } catch (e: any) {
-      alert(e.message);
+    } catch {
+      toast.error("Erreur");
     } finally {
       setDeleting(false);
     }
@@ -109,6 +122,7 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
         className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         <div className="flex items-start justify-between p-5 border-b border-slate-200">
           <div>
             <div className="flex items-center gap-2">
@@ -125,9 +139,7 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-              aria-label="Supprimer"
-              title="Supprimer la commande"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600"
             >
               {deleting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -144,7 +156,30 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
           </div>
         </div>
 
+        {/* Body */}
         <div className="p-5 overflow-y-auto flex-1 space-y-5">
+          {isNewRequest && (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+              <div className="flex items-center gap-1 text-xs uppercase font-semibold text-blue-700 mb-1">
+                <FileText className="h-3.5 w-3.5" /> Demande du client via le
+                site
+              </div>
+              <p className="text-sm text-blue-900 whitespace-pre-wrap">
+                {currentOrder.items_description}
+              </p>
+              {currentOrder.project_type && (
+                <p className="text-xs text-blue-700 mt-2 font-medium">
+                  Catégorie : {currentOrder.project_type}
+                </p>
+              )}
+              {currentOrder.source_detail && (
+                <p className="text-xs text-blue-700 mt-1">
+                  {currentOrder.source_detail}
+                </p>
+              )}
+            </div>
+          )}
+
           {currentOrder.clients && (
             <div className="rounded-xl border border-slate-200 p-4">
               <div className="text-xs uppercase font-semibold text-slate-500 mb-2">
@@ -162,32 +197,18 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
                   href={whatsappLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-green-600 hover:text-green-700"
+                  className="mt-3 inline-flex items-center gap-2 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-600"
                 >
-                  <MessageCircle className="h-4 w-4" />
-                  Contacter sur WhatsApp
+                  <MessageCircle className="h-4 w-4" /> Contacter sur WhatsApp
                 </a>
               )}
             </div>
           )}
 
           <div className="rounded-xl border border-slate-200 p-4">
-            <div className="text-xs uppercase font-semibold text-slate-500 mb-2 flex items-center gap-1">
-              <Package className="h-3.5 w-3.5" />
-              Marchandise
-            </div>
-            <div className="font-semibold text-slate-900">
-              {currentOrder.items_description}
-            </div>
-            <div className="text-sm text-slate-600">
-              Quantité : {currentOrder.quantity}
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-200 p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="text-xs uppercase font-semibold text-slate-500">
-                Fournisseur & Coûts
+                Détails Financiers
               </div>
               <button
                 onClick={() => setEditMode(!editMode)}
@@ -199,20 +220,18 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
 
             {editMode ? (
               <div className="space-y-3">
-                <input
-                  type="text"
-                  value={supplierName}
-                  onChange={(e) => setSupplierName(e.target.value)}
-                  placeholder="Nom fournisseur"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"
-                />
-                <input
-                  type="text"
-                  value={supplierCity}
-                  onChange={(e) => setSupplierCity(e.target.value)}
-                  placeholder="Ville fournisseur"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"
-                />
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block">
+                    Prix de vente (FCFA) *
+                  </label>
+                  <input
+                    type="number"
+                    value={saleFcfa}
+                    onChange={(e) => setSaleFcfa(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-bold text-blue-600"
+                    placeholder="Ex: 18500000"
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="text-xs text-slate-500 mb-1 block">
@@ -237,17 +256,27 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
                     />
                   </div>
                 </div>
-
-                {error && (
-                  <div className="rounded-lg bg-red-50 border border-red-200 p-2 text-xs text-red-700">
-                    {error}
-                  </div>
-                )}
-
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={supplierName}
+                    onChange={(e) => setSupplierName(e.target.value)}
+                    placeholder="Fournisseur"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={supplierCity}
+                    onChange={(e) => setSupplierCity(e.target.value)}
+                    placeholder="Ville fournisseur"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"
+                  />
+                </div>
+                {error && <div className="text-xs text-red-600">{error}</div>}
                 <button
-                  onClick={handleSave}
+                  onClick={() => handleSave()}
                   disabled={loading}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg"
                 >
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -258,21 +287,17 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
                 </button>
               </div>
             ) : (
-              <div className="space-y-1 text-sm">
+              <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Fournisseur</span>
-                  <span className="font-semibold">
-                    {currentOrder.supplier_name || "—"}
+                  <span className="text-slate-500">Prix de vente</span>
+                  <span className="font-bold text-slate-900">
+                    {currentOrder.sale_price_fcfa
+                      ? formatFCFA(currentOrder.sale_price_fcfa)
+                      : "À définir"}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Ville</span>
-                  <span className="font-semibold">
-                    {currentOrder.supplier_city || "—"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Prix achat</span>
+                  <span className="text-slate-500">Prix d'achat</span>
                   <span className="font-semibold">
                     {formatAED(currentOrder.purchase_price_aed)}
                   </span>
@@ -283,40 +308,33 @@ export function OrderDetailModal({ order, onClose, onSaved }: Props) {
                     {formatAED(currentOrder.transport_cost_aed)}
                   </span>
                 </div>
+                <div className="flex justify-between border-t border-slate-100 pt-2 mt-2">
+                  <span className="text-emerald-700 font-semibold">
+                    Marge nette
+                  </span>
+                  <span className="font-bold text-emerald-600">
+                    {formatFCFA(currentOrder.margin_fcfa)}
+                  </span>
+                </div>
               </div>
             )}
           </div>
 
-          <div className="rounded-xl border border-green-200 bg-green-50 p-4">
-            <div className="text-xs uppercase font-semibold text-green-700 mb-2 flex items-center gap-1">
-              <TrendingUp className="h-3.5 w-3.5" />
-              Finances
-            </div>
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-green-800">Prix de vente</span>
-              <span className="font-bold text-green-900">
-                {formatFCFA(currentOrder.sale_price_fcfa)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-green-800">Marge nette</span>
-              <span className="font-bold text-green-900">
-                {formatFCFA(editMode ? liveMargin : currentOrder.margin_fcfa)}
-              </span>
-            </div>
-            <div className="text-[10px] text-green-600 mt-2">
-              Taux : 1 AED = {currentOrder.exchange_rate_aed_to_fcfa} FCFA
-            </div>
-          </div>
-
-          {currentOrder.expected_delivery && (
-            <div className="rounded-xl border border-slate-200 p-4">
-              <div className="text-xs uppercase font-semibold text-slate-500 mb-1">
-                Livraison prévue
-              </div>
-              <div className="font-semibold text-slate-900">
-                {formatDate(currentOrder.expected_delivery)}
-              </div>
+          {isNewRequest && !editMode && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <h4 className="text-sm font-bold text-amber-900 mb-1">
+                Action requise
+              </h4>
+              <p className="text-xs text-amber-700 mb-3">
+                Contactez le client, négociez le prix, puis indiquez le montant
+                pour avancer.
+              </p>
+              <button
+                onClick={() => setEditMode(true)}
+                className="w-full bg-amber-500 text-white font-semibold py-2 rounded-lg text-sm flex justify-center items-center gap-2"
+              >
+                <Send className="h-4 w-4" /> Définir le prix et envoyer le devis
+              </button>
             </div>
           )}
         </div>

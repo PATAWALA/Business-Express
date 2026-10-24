@@ -11,22 +11,26 @@ interface Props {
   onSearchChange: (v: string) => void;
   filter: FilterKey;
   onFilterChange: (v: FilterKey) => void;
-  counts: Record<FilterKey, number>;
+  counts: Record<string, number>;
 }
 
 const filterOptions: { key: FilterKey; label: string }[] = [
   { key: "all", label: "Toutes" },
+  { key: "new", label: "🟡 Nouveaux" },
+  { key: "quoted", label: "🟣 Devis" },
   { key: "sourcing", label: "Sourcing" },
   { key: "purchased", label: "Acheté" },
   { key: "freight", label: "En fret" },
   { key: "delivered", label: "Livré" },
 ];
 
-const filterColors: Record<FilterKey, string> = {
+const filterColors: Record<string, string> = {
   all: "bg-slate-900 text-white",
-  sourcing: "bg-amber-500 text-white",
-  purchased: "bg-blue-600 text-white",
-  freight: "bg-purple-600 text-white",
+  new: "bg-amber-500 text-white",
+  quoted: "bg-purple-600 text-white",
+  sourcing: "bg-blue-600 text-white",
+  purchased: "bg-indigo-600 text-white",
+  freight: "bg-fuchsia-600 text-white",
   delivered: "bg-emerald-600 text-white",
 };
 
@@ -39,7 +43,6 @@ export function OrdersFilters({
 }: Props) {
   return (
     <div className="space-y-4 mb-6">
-      {/* Recherche */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <input
@@ -60,7 +63,6 @@ export function OrdersFilters({
         )}
       </div>
 
-      {/* Filtres statut */}
       <div className="flex flex-wrap gap-2">
         {filterOptions.map((opt) => {
           const isActive = filter === opt.key;

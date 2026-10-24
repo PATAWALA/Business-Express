@@ -19,7 +19,6 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/admin", label: "Vue d'ensemble", icon: LayoutDashboard },
-  { href: "/admin/projets", label: "Demandes projet", icon: Inbox },
   { href: "/admin/commandes", label: "Commandes", icon: ShoppingBag },
   { href: "/admin/clients", label: "Clients", icon: Users },
   { href: "/admin/finances", label: "Finances", icon: Wallet },

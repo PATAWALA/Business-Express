@@ -18,7 +18,6 @@ import { cn } from "@/lib/utils";
 
 const mainTabs = [
   { href: "/admin", label: "Accueil", icon: LayoutDashboard },
-  { href: "/admin/projets", label: "Projets", icon: Inbox },
   { href: "/admin/commandes", label: "Commandes", icon: ShoppingBag },
   { href: "/admin/clients", label: "Clients", icon: Users },
   { href: "/admin/finances", label: "Finances", icon: Wallet },
