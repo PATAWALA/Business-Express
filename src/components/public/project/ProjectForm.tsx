@@ -106,9 +106,7 @@ export function ProjectForm() {
   // État de succès
   if (success) {
     const whatsappMessage = `Bonjour Prince, je viens de déposer mon projet sur votre site. Mon nom est ${success.full_name}. Merci de m'en dire plus.`;
-    const whatsappLink = `https://wa.me/${success.agent_whatsapp}?text=${encodeURIComponent(
-      whatsappMessage
-    )}`;
+    const whatsappLink = `https://wa.me/${success.agent_whatsapp}?text=${encodeURIComponent(whatsappMessage)}`;
 
     return (
       <div className="max-w-xl mx-auto text-center py-12">
@@ -116,11 +114,11 @@ export function ProjectForm() {
           <CheckCircle2 className="h-10 w-10 text-emerald-600" />
         </div>
         <h2 className="text-3xl font-black text-slate-900 mb-3">
-          Projet reçu avec succès ✅
+          Demande envoyée ✅
         </h2>
         <p className="text-slate-600 mb-8 max-w-md mx-auto">
-          Merci <strong>{success.full_name}</strong> ! Nous étudions votre
-          demande et nous vous recontactons <strong>sous 48h</strong>.
+          Merci <strong>{success.full_name}</strong> ! Votre projet a bien été enregistré dans notre système. 
+          Nous l'étudions et nous vous recontactons <strong>sous 48h</strong>.
         </p>
 
         <div className="space-y-3">
@@ -133,10 +131,6 @@ export function ProjectForm() {
             <MessageCircle className="h-5 w-5" />
             Discuter maintenant sur WhatsApp
           </a>
-          <p className="text-xs text-slate-500">
-            Vous pouvez aussi fermer cette page. Nous vous contacterons sur
-            WhatsApp.
-          </p>
         </div>
       </div>
     );

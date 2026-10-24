@@ -64,7 +64,7 @@ export function ShareProjectLink({ variant = "card" }: { variant?: "card" | "com
           </h2>
           <p className="text-sm text-slate-600 mt-1 leading-relaxed">
             Partagez ce lien sur votre WhatsApp, TikTok ou Instagram. Vos futurs clients 
-            y décrivent leur projet. Vous les retrouvez directement dans <strong>Demandes projet</strong>, 
+            y décrivent leur projet. Vous les retrouvez directement dans <strong>Commandes</strong>, 
             sans avoir à les chercher.
           </p>
         </div>
