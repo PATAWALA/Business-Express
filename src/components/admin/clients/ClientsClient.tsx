@@ -15,11 +15,12 @@ import { useToast } from "@/components/admin/ui/ToastProvider";
 
 interface Props {
   clients: Client[];
+  usdRate: number; // ✅ Ajouté
 }
 
 type FilterKey = "all" | "client" | "prospect";
 
-export function ClientsClient({ clients }: Props) {
+export function ClientsClient({ clients, usdRate }: Props) {
   const router = useRouter();
   const toast = useToast();
   const [search, setSearch] = useState("");
@@ -110,7 +111,12 @@ export function ClientsClient({ clients }: Props) {
         </div>
       )}
 
-      <ClientDetailModal clientId={selectedId} onClose={() => setSelectedId(null)} onRefresh={() => {}} />
+      <ClientDetailModal 
+        clientId={selectedId} 
+        onClose={() => setSelectedId(null)} 
+        onRefresh={() => {}} 
+        usdRate={usdRate} // ✅ Ajouté ici
+      />
     </div>
   );
 }

@@ -7,10 +7,19 @@ export const dynamic = "force-dynamic";
 
 export default async function ClientsPage() {
   const supabase = createAdminClient();
-  const { data: clients } = await supabase
-    .from("clients")
-    .select("*")
-    .order("name");
+  
+  // On récupère les clients ET le taux de change USD en même temps
+  const [{ data: clients }, { data: settings }] = await Promise.all([
+    supabase.from("clients").select("*").order("name"),
+    supabase.from("settings").select("exchange_rate_usd_to_fcfa").eq("id", 1).single(),
+  ]);
 
-  return <ClientsClient clients={(clients as Client[] | null) ?? []} />;
+  const usdRate = settings?.exchange_rate_usd_to_fcfa ?? 2800;
+
+  return (
+    <ClientsClient 
+      clients={(clients as Client[] | null) ?? []} 
+      usdRate={usdRate} 
+    />
+  );
 }
