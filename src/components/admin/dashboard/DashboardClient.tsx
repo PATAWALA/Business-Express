@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Wallet, TrendingUp, Package, AlertCircle, Plus, RefreshCw, ArrowRight, Users, CheckCircle2, ArrowDownRight,
+  Wallet, TrendingUp, Package, AlertCircle, Plus, RefreshCw, ArrowRight, Users, CheckCircle2, ArrowDownRight, Eye
 } from "lucide-react";
 import type { Order, Task, Client } from "@/lib/order-client";
 import { formatFCFA } from "@/lib/admin-utils";
@@ -21,7 +21,7 @@ interface Props {
   orders: OrderWithClient[];
   tasks: Task[];
   usdRate: number;
-  adminName: string; // ✅ Ajouté
+  adminName: string;
 }
 
 export function DashboardClient({ orders, tasks, usdRate = 2800, adminName }: Props) {
@@ -151,22 +151,51 @@ export function DashboardClient({ orders, tasks, usdRate = 2800, adminName }: Pr
         </div>
       </div>
 
-      {/* ÉTAT DES COMMANDES */}
+      {/* ÉTAT DES COMMANDES AVEC BOUTONS "VOIR" */}
       <div>
         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">État des commandes</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link href="/admin/commandes?status=new">
+          
+          {/* Nouveaux prospects */}
+          <div className="flex flex-col gap-2">
             <StatCard label="Nouveaux prospects" value={`${stats.newProspects}`} icon={Users} color="red" />
-          </Link>
-          <Link href="/admin/commandes?status=sourcing">
+            <Link href="/admin/commandes?status=new" className="block w-full">
+              <Button variant="outline" size="sm" className="w-full gap-2 bg-white text-red-600 border-red-200 hover:bg-red-50">
+                <Eye className="h-4 w-4" /> Voir les demandes
+              </Button>
+            </Link>
+          </div>
+
+          {/* En recherche */}
+          <div className="flex flex-col gap-2">
             <StatCard label="En recherche / devis" value={`${stats.inSourcing}`} icon={AlertCircle} color="amber" />
-          </Link>
-          <Link href="/admin/commandes?status=freight">
+            <Link href="/admin/commandes?status=sourcing" className="block w-full">
+              <Button variant="outline" size="sm" className="w-full gap-2 bg-white text-amber-600 border-amber-200 hover:bg-amber-50">
+                <Eye className="h-4 w-4" /> Voir en cours
+              </Button>
+            </Link>
+          </div>
+
+          {/* En transport */}
+          <div className="flex flex-col gap-2">
             <StatCard label="En transport" value={`${stats.inTransit}`} icon={Package} color="purple" />
-          </Link>
-          <Link href="/admin/commandes?status=delivered">
+            <Link href="/admin/commandes?status=freight" className="block w-full">
+              <Button variant="outline" size="sm" className="w-full gap-2 bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50">
+                <Eye className="h-4 w-4" /> Voir les colis
+              </Button>
+            </Link>
+          </div>
+
+          {/* Livrées */}
+          <div className="flex flex-col gap-2">
             <StatCard label="Livrées (terminées)" value={`${stats.delivered}`} icon={CheckCircle2} color="green" />
-          </Link>
+            <Link href="/admin/commandes?status=delivered" className="block w-full">
+              <Button variant="outline" size="sm" className="w-full gap-2 bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50">
+                <Eye className="h-4 w-4" /> Voir l'historique
+              </Button>
+            </Link>
+          </div>
+
         </div>
       </div>
 
@@ -181,3 +210,4 @@ export function DashboardClient({ orders, tasks, usdRate = 2800, adminName }: Pr
     </div>
   );
 }
+
